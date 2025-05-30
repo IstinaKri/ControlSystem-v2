@@ -1,0 +1,322 @@
+{% extends 'main/guard_base.html' %}
+{% load static %}
+
+{% block title %}Журнал посещений{% endblock %}
+
+{% block extra_css %}
+<style>
+    .journal-container {
+        padding: 20px;
+        background: #f3f4f6;
+        min-height: calc(100vh - 60px);
+    }
+
+    .journal-content {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+
+    .journal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .journal-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .journal-filters {
+        display: flex;
+        gap: 15px;
+    }
+
+    .filter-input {
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .visit-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .visit-table th {
+        background: #f9fafb;
+        padding: 12px;
+        text-align: left;
+        font-weight: 500;
+        color: #4b5563;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    .visit-table td {
+        padding: 12px;
+        border-bottom: 1px solid #e5e7eb;
+        color: #1f2937;
+    }
+
+    .visit-table tr:hover {
+        background: #f9fafb;
+    }
+
+    .visitor-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .visitor-name {
+        font-weight: 500;
+        color: #1f2937;
+    }
+
+    .visitor-details {
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    .car-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .car-icon {
+        color: #6b7280;
+    }
+
+    .time-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .entry-time {
+        color: #059669;
+    }
+
+    .exit-time {
+        color: #dc2626;
+    }
+
+    .photo-preview {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        object-fit: cover;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .photo-preview:hover {
+        transform: scale(1.1);
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background: #dcfce7;
+        color: #059669;
+    }
+
+    .status-completed {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+
+    .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 90%;
+        max-height: 90vh;
+    }
+
+    .modal-image {
+        max-width: 100%;
+        max-height: 80vh;
+        object-fit: contain;
+    }
+
+    .close-modal {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #6b7280;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="journal-container">
+    <div class="journal-content">
+        <div class="journal-header">
+            <h1 class="journal-title">Журнал посещений</h1>
+            <div class="journal-filters">
+                <input type="text" class="filter-input" placeholder="Поиск по имени..." id="nameFilter">
+                <input type="text" class="filter-input" placeholder="Поиск по номеру..." id="plateFilter">
+                <select class="filter-input" id="parkingFilter">
+                    <option value="">Все парковки</option>
+                    {% for log in visit_logs %}
+                    <option value="{{ log.parking_name }}">{{ log.parking_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <table class="visit-table">
+            <thead>
+                <tr>
+                    <th>Посетитель</th>
+                    <th>Автомобиль</th>
+                    <th>Парковка</th>
+                    <th>Въезд</th>
+                    <th>Выезд</th>
+                    <th>Фото</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in visit_logs %}
+                <tr>
+                    <td>
+                        <div class="visitor-info">
+                            <span class="visitor-name">{{ log.visitor_name }}</span>
+                            <span class="visitor-details">{{ log.visitor_position }}</span>
+                            {% if log.visitor_organization %}
+                            <span class="visitor-details">{{ log.visitor_organization }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="car-info">
+                            <i class="fas fa-car car-icon"></i>
+                            <span>{{ log.car_info }}</span>
+                        </div>
+                    </td>
+                    <td>{{ log.parking_name }}</td>
+                    <td>
+                        <div class="time-info">
+                            <span class="entry-time">{{ log.entry_time }}</span>
+                            {% if log.entry_photo %}
+                            <img src="{{ log.entry_photo }}" alt="Фото въезда" class="photo-preview" onclick="showPhoto(this.src)">
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="time-info">
+                            <span class="exit-time">{{ log.exit_time }}</span>
+                            {% if log.exit_photo %}
+                            <img src="{{ log.exit_photo }}" alt="Фото выезда" class="photo-preview" onclick="showPhoto(this.src)">
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-badge {% if log.exit_time %}status-completed{% else %}status-active{% endif %}">
+                            {% if log.exit_time %}Завершен{% else %}Активен{% endif %}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px;">
+                        Нет записей в журнале
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Модальное окно для просмотра фото -->
+<div class="modal" id="photoModal">
+    <div class="modal-content">
+        <button class="close-modal" onclick="closePhotoModal()">&times;</button>
+        <img src="" alt="Фото" class="modal-image" id="modalImage">
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Функция фильтрации таблицы
+    function filterTable() {
+        const nameFilter = document.getElementById('nameFilter').value.toLowerCase();
+        const plateFilter = document.getElementById('plateFilter').value.toLowerCase();
+        const parkingFilter = document.getElementById('parkingFilter').value;
+        
+        const rows = document.querySelectorAll('.visit-table tbody tr');
+        
+        rows.forEach(row => {
+            const visitorName = row.querySelector('.visitor-name').textContent.toLowerCase();
+            const carInfo = row.querySelector('.car-info').textContent.toLowerCase();
+            const parkingName = row.querySelector('td:nth-child(3)').textContent;
+            
+            const nameMatch = visitorName.includes(nameFilter);
+            const plateMatch = carInfo.includes(plateFilter);
+            const parkingMatch = !parkingFilter || parkingName === parkingFilter;
+            
+            row.style.display = nameMatch && plateMatch && parkingMatch ? '' : 'none';
+        });
+    }
+    
+    // Добавляем обработчики событий для фильтров
+    document.getElementById('nameFilter').addEventListener('input', filterTable);
+    document.getElementById('plateFilter').addEventListener('input', filterTable);
+    document.getElementById('parkingFilter').addEventListener('change', filterTable);
+});
+
+// Функции для работы с модальным окном
+function showPhoto(src) {
+    const modal = document.getElementById('photoModal');
+    const modalImage = document.getElementById('modalImage');
+    modalImage.src = src;
+    modal.style.display = 'block';
+}
+
+function closePhotoModal() {
+    const modal = document.getElementById('photoModal');
+    modal.style.display = 'none';
+}
+
+// Закрытие модального окна при клике вне изображения
+window.onclick = function(event) {
+    const modal = document.getElementById('photoModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,1480 @@
+{% extends 'users/guard_base.html' %}
+{% load static %}
+
+{% block title %}Главная страница охраны{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        padding: 20px;
+        background: #f3f4f6;
+        min-height: calc(100vh - 60px);
+    }
+    .requests-section {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+         display: flex;
+         gap: 2vw;
+    }
+
+    .selected-camera-info {
+        display: none;
+    }
+
+    
+
+    .left-area {
+        position: relative;
+        border: 0.1vw solid #ccc;
+        border-radius: 0.5vw;
+        padding: 1vw;
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1vw;
+        max-width: 40%;
+        width: 100%;
+    }
+
+    .parking-stats {
+        width: 100%;
+        background: white;
+        border-radius: 0.5vw;
+        padding: 1vw;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .parking-stats-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        padding: 0.5vw;
+        background: #f5f5f5;
+        border-radius: 0.3vw;
+    }
+
+    .parking-stats-header h3 {
+        margin: 0;
+        font-size: 1.1vw;
+        color: #333;
+    }
+
+    .parking-stats-header .toggle-icon {
+        font-size: 1.2vw;
+        color: #666;
+        transition: transform 0.3s ease;
+    }
+
+    .parking-stats-header.active .toggle-icon {
+        transform: rotate(180deg);
+    }
+
+    .parking-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5vw;
+        max-height: 0;
+        opacity: 0;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .parking-list.show {
+        max-height: 30vw;
+        opacity: 1;
+        margin-top: 0.5vw;
+        overflow-y: auto;
+        padding-right: 0.5vw;
+    }
+
+    .parking-list::-webkit-scrollbar {
+        width: 0.5vw;
+    }
+
+    .parking-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 0.25vw;
+    }
+
+    .parking-list::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 0.25vw;
+    }
+
+    .parking-list::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    .parking-item {
+        background: #f5f5f5;
+        border-radius: 0.3vw;
+        padding: 0.5vw;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3vw;
+    }
+
+    .parking-item.active {
+        background: #e3f2fd;
+        border: 0.1vw solid #2196f3;
+    }
+
+    .parking-name {
+        font-weight: bold;
+        font-size: 0.9vw;
+        color: #333;
+    }
+
+    .parking-capacity {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8vw;
+        color: #666;
+    }
+
+    .parking-progress {
+        width: 100%;
+        height: 0.3vw;
+        background: #e0e0e0;
+        border-radius: 0.15vw;
+        overflow: hidden;
+        margin-top: 0.2vw;
+    }
+
+    .parking-progress-bar {
+        height: 100%;
+        background: #4CAF50;
+        transition: width 0.3s ease;
+    }
+
+    .parking-progress-bar.warning {
+        background: #FFC107;
+    }
+
+    .parking-progress-bar.danger {
+        background: #F44336;
+    }
+
+    .right-area {
+        position: relative;
+        border: 0.1vw solid #ccc;
+        border-radius: 0.5vw;
+        padding: 1vw;
+        flex: 2 1 0;
+        max-width: 100%;
+        overflow-x: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1vw;
+    }
+
+    .stats-toggle-button {
+        position: absolute;
+        right: 1vw;
+        bottom: 1vw;
+        background: rgba(255, 255, 255, 0.95);
+        border: none;
+        border-radius: 0.5vw;
+        padding: 0.5vw 1vw;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5vw;
+        z-index: 102;
+        transition: all 0.3s ease;
+        font-size: 0.9vw;
+        color: #333;
+    }
+
+    .stats-toggle-button:hover {
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .stats-toggle-button i {
+        font-size: 1vw;
+    }
+
+    .stats-section {
+        position: absolute;
+        right: 1vw;
+        bottom: 4vw;
+        width: 25vw;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 0.5vw;
+        padding: 1vw;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        backdrop-filter: blur(5px);
+        z-index: 101;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .stats-section.visible {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .stats-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1vw;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        padding-bottom: 0.5vw;
+    }
+
+    .stats-header h3 {
+        margin: 0;
+        font-size: 1.1vw;
+        color: #333;
+    }
+
+    .stats-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8vw;
+        max-height: 20vw;
+        overflow-y: auto;
+    }
+
+    .stat-item {
+        background: rgba(245, 245, 245, 0.8);
+        border-radius: 0.3vw;
+        padding: 0.8vw;
+        transition: all 0.3s ease;
+    }
+
+    .stat-item:hover {
+        background: rgba(245, 245, 245, 1);
+        transform: translateX(-0.2vw);
+    }
+
+    .stat-item-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5vw;
+    }
+
+    .stat-item-title {
+        font-weight: bold;
+        font-size: 0.9vw;
+        color: #333;
+    }
+
+    .stat-item-value {
+        font-size: 0.9vw;
+        color: #666;
+    }
+
+    .stat-progress {
+        width: 100%;
+        height: 0.3vw;
+        background: rgba(224, 224, 224, 0.5);
+        border-radius: 0.15vw;
+        overflow: hidden;
+    }
+
+    .stat-progress-bar {
+        height: 100%;
+        background: #4CAF50;
+        transition: width 0.3s ease;
+    }
+
+    .stat-progress-bar.warning {
+        background: #FFC107;
+    }
+
+    .stat-progress-bar.danger {
+        background: #F44336;
+    }
+
+    .selected-camera-header {
+        background: #f5f5f5;
+        border-radius: 0.5vw;
+        padding: 0.5vw;
+        display: flex;
+        align-items: center;
+        gap: 0.5vw;
+        margin-bottom: 0.5vw;
+    }
+
+    .selected-camera-header .camera-status {
+        position: static;
+        padding: 0.3vw 0.8vw;
+    }
+
+    .selected-camera-header .camera-details {
+        flex: 1;
+    }
+
+    .selected-camera-header h2 {
+        margin: 0;
+        font-size: 1.1vw;
+        color: #333;
+    }
+
+    .selected-camera-header .camera-info {
+        margin: 0.2vw 0 0;
+        font-size: 0.9vw;
+        color: #666;
+    }
+
+    .image-box {
+        width: 90%;
+        aspect-ratio: 4.7 / 3;
+        border: 0.2vw dashed #ccc;
+        background-color: #f5f5f5;
+        border-radius: 0.5vw;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .image-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .image-box.no-image::before {
+        content: "Нет изображения";
+        color: #999;
+        font-size: 1vw;
+        position: absolute;
+    }
+
+    .plate {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        max-width: 350px;
+        min-width: 160px;
+        height: clamp(40px, 12vw, 75px);
+        background: white;
+        border: 3px solid black;
+        border-radius: 10px;
+        font-family: Arial, sans-serif;
+        padding: 0.5em 1em;
+        margin: 0 auto;
+        box-sizing: border-box;
+        transition: width 0.3s, height 0.3s;
+    }
+
+    .number {
+        flex-grow: 1;
+        font-size: clamp(14px, 5vw, 25px);
+        font-weight: bold;
+        padding-left: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .region-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-left: 2px solid rgb(9, 5, 5);
+        padding: 0.2em 0.8em;
+        height: 90%;
+        min-width: 0;
+    }
+
+    .region {
+        font-size: clamp(12px, 2vw, 25px);
+        font-weight: bold;
+    }
+
+    .country {
+        font-size: clamp(8px, 1vw, 12px);
+        font-weight: bold;
+    }
+
+    .flag {
+        width: clamp(12px, 2vw, 30px);
+        height: clamp(8px, 1.2vw, 20px);
+        margin-top: 5px;
+        background: linear-gradient(to bottom,
+            #fff 33.33%,
+            #0039A6 33.33%, #0039A6 66.66%,
+            #D52B1E 66.66%);
+    }
+
+    .access-status {
+        width: 90%;
+        padding: 1vw;
+        text-align: center;
+        border-radius: 0.5vw;
+        color: white;
+        font-weight: bold;
+        font-size: 1vw;
+    }
+
+    .access-status.allowed {
+        background-color: green;
+    }
+
+    .access-status.denied {
+        background-color: #dc2626;
+    }
+
+    .control-buttons {
+        display: flex;
+        gap: 1vw;
+        margin-top: auto;
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .control-button {
+        padding: 1vw;
+        border: 0.1vw solid #e5e7eb;
+        border-radius: 0.5vw;
+        font-size: 1vw;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+        color: #374151;
+        text-align: center;
+    }
+
+    .top-buttons {
+        display: flex;
+        justify-content: space-between;
+        gap: 1vw;
+        width: 100%;
+    }
+
+    .top-buttons button {
+        flex: 1;
+    }
+
+    .control-button:hover.button-allow {
+        background: #059669;
+        color: white;
+        border-color: #059669;
+    }
+
+    .control-button:hover.button-reject {
+        background: #dc2626;
+        color: white;
+        border-color: #dc2626;
+    }
+
+    .main-video {
+        width: 80%;
+        margin: 0 auto;
+        background: #000;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 0.7vw;
+        position: relative;
+    }
+
+    .main-video::after {
+        content: '';
+        position: absolute;
+        bottom: -1vw;
+        left: 0;
+        width: 100%;
+        height: 0.1vw;
+        background: #e0e0e0;
+    }
+
+    .main-video-content {
+        width: 100%;
+        height: 32vw;
+        background: #000;
+        position: relative;
+    }
+
+    .main-video-content video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .main-video-content .camera-status {
+        position: absolute;
+        top: 1vw;
+        right: 1vw;
+        z-index: 2;
+    }
+
+    .main-video-caption {
+        padding: 0.5vw;
+        background: #1a1a1a;
+        color: white;
+    }
+
+    .main-video-caption h3 {
+        margin: 0;
+        font-size: 1.1vw;
+    }
+
+    .main-video-caption .camera-info {
+        margin: 0.2vw 0 0;
+        font-size: 0.9vw;
+        color: #ccc;
+    }
+
+    .main-video-caption .camera-number {
+        font-weight: bold;
+        color: white;
+    }
+
+    .main-video-caption .parking-name {
+        color: #ccc;
+    }
+
+    .main-video-caption .camera-type {
+        display: inline-block;
+        padding: 0.3vw 0.8vw;
+        border-radius: 0.3vw;
+        font-size: 0.9vw;
+        background: #333;
+        margin-top: 0.5vw;
+    }
+
+    .video-gallery {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.3vw;
+        width: 100%;
+        max-height: 40vw;
+        height: auto;
+        overflow-y: auto;
+        padding: 0.5vw;
+        background: transparent;
+        border-radius: 8px;
+        margin-top: 0;
+    }
+
+    .video-gallery::-webkit-scrollbar {
+        width: 0.5vw;
+    }
+
+    .video-gallery::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 0.25vw;
+    }
+
+    .video-gallery::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 0.25vw;
+    }
+
+    .video-gallery::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    .video-box {
+        background: transparent;
+        border-radius: 5px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        border: 2px solid transparent;
+        display: flex;
+        flex-direction: column;
+        height: 16vw;
+        min-height: unset;
+        margin-bottom: 0.2vw;
+        box-sizing: border-box;
+        position: relative;
+    }
+
+    .video-box:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .video-box.active {
+        border-color: #4CAF50;
+        box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+        transform: scale(1.03);
+        position: relative;
+    }
+
+    .small-video {
+        position: relative;
+        width: 100%;
+        height: 16vw;
+        background: #000;
+        overflow: hidden;
+        border-top-left-radius: 5px;
+        border-top-right-radius: 5px;
+        border-bottom-left-radius: 5px;
+        border-bottom-right-radius: 5px;
+    }
+
+    .small-video iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    .camera-status {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        z-index: 1;
+    }
+
+    .status-online {
+        background: #4CAF50;
+        color: white;
+    }
+
+    .status-offline {
+        background: #f44336;
+        color: white;
+    }
+
+    .video-caption {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 25%;
+        background: #fff;
+        color: #222;
+        z-index: 2;
+        padding: 0.7vw 1vw;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.10);
+        border-bottom-left-radius: 5px;
+        border-bottom-right-radius: 5px;
+        opacity: 0.97;
+    }
+
+    .video-caption .caption-row {
+        font-weight: normal;
+        font-size: 1vw;
+        margin-bottom: 0.1vw;
+        line-height: 1.1;
+    }
+
+    .video-caption .caption-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .video-caption .camera-type {
+        font-size: 1vw;
+        padding: 0.2vw 0.7vw;
+        background: #e0e0e0;
+        border-radius: 0.5vw;
+        display: inline-block;
+        margin-top: 0.2vw;
+    }
+
+    .video-caption .camera-number {
+        font-weight: bold;
+        color: #333;
+    }
+
+    .video-caption .parking-name {
+        color: #666;
+    }
+
+    .modal {
+        display: none;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 28vw;
+        background-color: white;
+        border: 0.2vw solid #ccc;
+        border-radius: 0.5vw;
+        box-shadow: 0 0 1vw rgba(0,0,0,0.2);
+        padding: 1.5vw;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1vw;
+        font-size: 1vw;
+    }
+
+    .modal-close {
+        align-self: flex-end;
+        font-size: 1.5vw;
+        cursor: pointer;
+        color: #666;
+        margin-bottom: 0.5vw;
+    }
+
+    .modal-close:hover {
+        color: #dc2626;
+    }
+
+    .quick-time-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2vw;
+        margin: 0.2vw 0 0.2vw 0;
+        align-items: center;
+    }
+
+    .quick-time-label {
+        font-size: 0.85vw;
+        color: #666;
+        margin-right: 0.2vw;
+        min-width: 4vw;
+    }
+
+    .quick-time {
+        background: #f3f4f6;
+        color: #333;
+        border: 1px solid #e5e7eb;
+        padding: 0.15vw 0.5vw;
+        border-radius: 0.3vw;
+        font-size: 0.85vw;
+        height: 1.7vw;
+        min-height: 1.7vw;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s, border 0.2s;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        display: flex;
+        align-items: center;
+    }
+
+    .quick-time:hover, .quick-time:focus {
+        background: #4CAF50;
+        color: #fff;
+        border-color: #4CAF50;
+        outline: none;
+    }
+
+    @media (max-width: 900px) {
+        .requests-section {
+            flex-direction: column;
+            height: auto;
+            overflow: visible;
+        }
+
+        .left-area,
+        .right-area {
+            max-width: 100%;
+            width: 100%;
+            flex: 0 0 auto;
+        }
+
+        .dashboard-container {
+            padding: 4vw 2vw;
+            height: auto;
+        }
+
+        html, body {
+            height: auto;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .video-gallery {
+            grid-template-columns: 1fr;
+            height: 40vw;
+        }
+    }
+
+    /* Стили для лоадера */
+    .loading-spinner {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        border: 3px solid rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        border-top-color: #4CAF50;
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 10px;
+        vertical-align: middle;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    .recognition-status {
+        text-align: center;
+        padding: 0.5vw;
+        margin-bottom: 0.5vw;
+        border-radius: 0.3vw;
+        font-size: 0.9vw;
+        display: none;
+    }
+
+    .recognition-status.success {
+        background-color: #d1e7dd;
+        color: #0f5132;
+        border: 1px solid #badbcc;
+    }
+
+    .recognition-status.error {
+        background-color: #f8d7da;
+        color: #842029;
+        border: 1px solid #f5c2c7;
+    }
+
+    .recognition-status.processing {
+        background-color: #cff4fc;
+        color: #055160;
+        border: 1px solid #b6effb;
+    }
+
+    /* Добавим стиль для сообщений об ошибках */
+    .video-error-message {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    .plate-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5vw;
+        align-items: center;
+    }
+
+    .plate-number {
+        display: flex;
+        gap: 0.3vw;
+        font-size: 1.2vw;
+        font-weight: bold;
+    }
+
+    .region, .country {
+        color: #666;
+    }
+
+    .number {
+        color: #333;
+    }
+
+    .status-badge {
+        padding: 0.3vw 0.8vw;
+        border-radius: 0.3vw;
+        font-size: 0.9vw;
+        font-weight: 500;
+    }
+
+    .status-allowed {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .status-denied {
+        background-color: #F44336;
+        color: white;
+    }
+
+    .status-unknown {
+        background-color: #9E9E9E;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="requests-section">
+        <div class="left-area">
+            
+                
+                <div class="parking-list">
+                    {% for parking in parkings %}
+                    <div class="parking-item {% if forloop.first %}active{% endif %}">
+                        <div class="parking-name">{{ parking.name }}</div>
+                        <div class="parking-capacity">
+                            <span>Занято: {{ parking.current_cars }}/{{ parking.max_cars }}</span>
+                            <span>{{ parking.percentage }}%</span>
+                        </div>
+                        <div class="parking-progress">
+                            <div class="parking-progress-bar{% if parking.percentage > 80 %} danger{% elif parking.percentage > 60 %} warning{% endif %}" style="width: {{ parking.percentage }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            
+
+            <div class="parking-info">
+                <p><strong> <span id="selected-camera">-</span></strong></p>
+            </div>
+            
+            <div class="recognition-status" id="recognition-status">
+                <div class="loading-spinner"></div>
+                <span class="loading-text">Распознавание номера...</span>
+            </div>
+            
+            <div class="image-box {% if not log.image %}no-image{% endif %}" id="plate-image-container">
+                {% if log.image %}
+                    <img src="{{ log.image.url }}" alt="Изображение автомобиля" id="plate-image">
+                {% else %}
+                {% endif %}
+            </div>
+
+            <div class="plate-info">
+            <div class="plate">
+                    <div class="number" id="plate-number">XXXXXX</div>
+                <div class="region-box">
+                        <div class="region" id="region">XXX</div>
+                        <div class="country" id="country">RUS</div>
+                        <div class="flag"></div>
+                    </div>
+                </div>
+                
+            </div>
+
+            <div class="access-status denied" id="access-status">
+                Доступ запрещен
+            </div>
+
+            <div class="control-buttons">
+                <div class="top-buttons">
+                    <button class="control-button button-allow">Запустить</button>
+                    <button class="control-button button-reject">Отказ</button>
+                </div>
+                <button class="control-button" id="open-modal-btn">Дополнительно</button>
+            </div>
+
+            <div id="settings-modal" class="modal">
+                <div class="modal-content"> 
+                    <h2>Настройки шлагбаума</h2>
+                
+                    <!-- Кнопки в одну строку -->
+                    <div style="display: flex; gap: 1vw; margin-top: 1vw;">
+                        <button class="control-button" style="flex: 1; padding: 1vw; text-align: center;">Постоянно открыт</button>
+                        <button class="control-button" style="flex: 1; padding: 1vw; text-align: center;">Постоянно закрыт</button>
+                    </div>
+                
+                    <label>Время открытия: <input type="time" name="open_time"></label>
+                    <label>Время закрытия: <input type="time" name="close_time"></label>
+                
+                    <div class="quick-time-group">
+                        <span class="quick-time-label">Быстрое время:</span>
+                        <button type="button" class="control-button quick-time" data-minutes="10">10 мин</button>
+                        <button type="button" class="control-button quick-time" data-minutes="15">15 мин</button>
+                        <button type="button" class="control-button quick-time" data-minutes="30">30 мин</button>
+                        <button type="button" class="control-button quick-time" data-minutes="60">60 мин</button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1vw; margin-top: 1vw;">
+                        <button class="control-button" style="flex: 1; padding: 1vw; text-align: center;">Обычный режим</button>
+                        <button class="control-button" style="flex: 1; padding: 1vw; text-align: center;">Сохранить</button>
+                    </div>
+                
+                </div>
+                
+            </div>
+        </div>
+
+        <div class="right-area">
+
+            <!-- Галерея камер с iframe вместо img -->
+            <div class="video-gallery">
+                {% for camera in cameras %}
+                <div class="video-box" data-camera-id="{{ camera.id }}" style="width: 100%; max-width: 320px;">
+                    <div class="small-video" style="position: relative; width: 100%; padding-top: 56.25%; overflow: hidden; border-radius: 8px;">
+                        <iframe id="stream-{{ camera.id }}"
+                                src="{{ camera.stream_url }}"
+                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                data-stream-url="{{ camera.stream_url }}"
+                                allowfullscreen>
+                        </iframe>
+                        <div class="camera-status {% if camera.is_online %}status-online{% else %}status-offline{% endif %}">
+                            {% if camera.is_online %}Онлайн{% else %}Оффлайн{% endif %}
+                        </div>
+                        <div class="video-caption">
+                            <div class="caption-row"><b>Камера:</b> {{ camera.name }}</div>
+                            <div class="caption-row"><b>Парковка:</b> {{ camera.parking_name }}</div>
+                            <div class="caption-row">{% if camera.type == 'barrier' %}{% if camera.barrier %}{{ camera.barrier }}{% else %}Шлагбаум{% endif %}{% else %}Обзорная{% endif %}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <button class="stats-toggle-button" id="statsToggle">
+                <i class="fas fa-chart-bar"></i>
+                Статистика
+            </button>
+            <div class="stats-section" id="statsSection">
+                <div class="stats-header">
+                    <h3>Статистика парковок</h3>
+                </div>
+                <div class="stats-list">
+                    {% for parking in parkings %}
+                    <div class="stat-item">
+                        <div class="stat-item-header">
+                            <span class="stat-item-title">{{ parking.name }}</span>
+                            <span class="stat-item-value">{{ parking.current_cars }}/{{ parking.max_cars }}</span>
+                        </div>
+                        <div class="stat-progress">
+                            <div class="stat-progress-bar{% if parking.percentage > 80 %} danger{% elif parking.percentage > 60 %} warning{% endif %}" style="width: {{ parking.percentage }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Объявляем основные переменные
+    const modal = document.getElementById("settings-modal");
+    const openBtn = document.getElementById("open-modal-btn");
+        const statsToggle = document.getElementById('statsToggle');
+        const statsSection = document.getElementById('statsSection');
+        const selectedCameraElement = document.getElementById('selected-camera');
+        const selectedParkingElement = document.getElementById('selected-parking');
+        const videoBoxes = document.querySelectorAll('.video-box');
+        let isStatsVisible = false;
+
+        // Инициализация
+        init();
+
+        // Функция инициализации
+        function init() {
+            // 1. Добавляем обработчики событий для камер
+            videoBoxes.forEach(box => {
+                box.addEventListener('click', function() {
+                    // Сбрасываем активные камеры
+                    videoBoxes.forEach(el => el.classList.remove('active'));
+                    
+                    // Активируем текущую
+                    this.classList.add('active');
+                    
+                    // Обновляем информацию о выбранной камере
+                    updateSelectedCamera(this);
+                });
+            });
+
+            // 2. Инициализируем обработчики для кнопок и модальных окон
+            if (openBtn && modal) {
+                openBtn.onclick = () => {
+                    modal.style.display = "block";
+                };
+            }
+
+        if (statsToggle && statsSection) {
+                statsToggle.addEventListener('click', toggleStats);
+            }
+
+            // 3. Добавляем обработчики для закрытия модальных окон по клику вне
+            document.addEventListener('click', handleOutsideClick);
+            document.addEventListener('mousedown', handleModalOutsideClick);
+
+            // 4. Настраиваем кнопки быстрого выбора времени
+            document.querySelectorAll('.quick-time').forEach(btn => {
+                btn.addEventListener('click', handleQuickTime);
+            });
+
+            // 5. Настраиваем обработку RTSP-потоков
+            setupRtspStreams();
+
+            // 6. Выбираем первую камеру по умолчанию
+            const firstCamera = videoBoxes[0];
+            if (firstCamera) {
+                firstCamera.classList.add('active');
+                updateSelectedCamera(firstCamera);
+            }
+        }
+
+        // Обновление информации о выбранной камере
+        function updateSelectedCamera(cameraBox) {
+            console.log('Updating selected camera information');
+            
+            // Получаем информацию о камере из подписей
+            const captionRows = cameraBox.querySelectorAll('.video-caption .caption-row');
+            if (!captionRows || captionRows.length === 0) {
+                console.error('No caption rows found');
+                return;
+            }
+            
+            // Извлекаем имена и stream_url
+            let cameraName = '';
+            let parkingName = '';
+            let streamUrl = '';
+            
+            // Получаем URL потока из атрибутов изображения
+            const imgElement = cameraBox.querySelector('iframe');
+            if (imgElement) {
+                streamUrl = imgElement.getAttribute('data-stream-url');
+            }
+            
+            captionRows.forEach(row => {
+                const text = row.innerText;
+                if (text.includes('Камера:')) {
+                    cameraName = text.replace('Камера:', '').trim();
+                } else if (text.includes('Парковка:')) {
+                    parkingName = text.replace('Парковка:', '').trim();
+                }
+            });
+            
+            console.log('Camera info:', { camera: cameraName, parking: parkingName, streamUrl: streamUrl });
+            
+            // Обновляем элементы на странице
+            if (selectedCameraElement) {
+                selectedCameraElement.textContent = cameraName || '-';
+            }
+            
+            if (selectedParkingElement) {
+                selectedParkingElement.textContent = parkingName || '-';
+            }
+            
+            // Запускаем распознавание номера, если есть URL потока
+            if (streamUrl) {
+                recognizeLicensePlate(streamUrl);
+            }
+            
+            // Обновляем видео и подпись в главном окне
+            updateMainVideo(cameraBox);
+        }
+
+        // Обновление главного видео
+        function updateMainVideo(cameraBox) {
+            const mainVideoContainer = document.getElementById('main-video-container');
+            
+            if (!mainVideoContainer) {
+                console.error('Main video container not found');
+                return;
+            }
+            
+            // Очищаем контейнер
+            mainVideoContainer.innerHTML = '';
+            
+            // Получаем URL потока
+            const imgElement = cameraBox.querySelector('iframe');
+            
+            if (!imgElement) {
+                console.error('Stream image not found');
+                return;
+            }
+            
+            const streamUrl = imgElement.getAttribute('data-stream-url');
+            
+            // Создаем изображение для основного просмотра
+            const mainImg = document.createElement('iframe');
+            mainImg.src = streamUrl;
+            mainImg.style.width = '100%';
+            mainImg.style.height = '100%';
+            mainImg.style.border = 'none';
+            mainImg.setAttribute('data-stream-url', streamUrl);
+            
+            // Добавляем обработчик загрузки
+            mainImg.onload = function() {
+                console.log('Видео поток успешно подключен');
+                // Обновляем статус камеры
+                const statusElement = cameraBox.querySelector('.camera-status');
+                if (statusElement) {
+                    statusElement.className = 'camera-status status-online';
+                    statusElement.textContent = 'Подключено';
+                }
+            };
+            
+            // Добавляем обработчик ошибки
+            mainImg.onerror = function() {
+                console.error('Ошибка подключения к видео потоку');
+                // Обновляем статус камеры
+                const statusElement = cameraBox.querySelector('.camera-status');
+                if (statusElement) {
+                    statusElement.className = 'camera-status status-offline';
+                    statusElement.textContent = 'Ошибка подключения';
+                }
+                
+                // Добавляем сообщение об ошибке
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'video-error-message';
+                errorMessage.textContent = 'Ошибка подключения к видео потоку';
+                mainVideoContainer.appendChild(errorMessage);
+            };
+            
+            // Очищаем контейнер и добавляем новое изображение
+            mainVideoContainer.appendChild(mainImg);
+            
+            // Выделяем активную камеру
+            const allCameras = document.querySelectorAll('.video-box');
+            allCameras.forEach(cam => cam.classList.remove('active'));
+            cameraBox.classList.add('active');
+        }
+
+        // Обработчик переключения статистики
+        function toggleStats(e) {
+                e.stopPropagation();
+                isStatsVisible = !isStatsVisible;
+                statsSection.classList.toggle('visible');
+                const icon = statsToggle.querySelector('i');
+                if (icon) {
+                    icon.classList.toggle('fa-chart-bar');
+                    icon.classList.toggle('fa-times');
+                }
+        }
+
+        // Обработчик клика вне области статистики
+        function handleOutsideClick(event) {
+            if (isStatsVisible && 
+                statsSection && 
+                !statsSection.contains(event.target) && 
+                !statsToggle.contains(event.target)) {
+                isStatsVisible = false;
+                statsSection.classList.remove('visible');
+                const icon = statsToggle.querySelector('i');
+                if (icon) {
+                    icon.classList.add('fa-chart-bar');
+                    icon.classList.remove('fa-times');
+                }
+            }
+        }
+
+        // Обработчик клика вне модального окна
+        function handleModalOutsideClick(event) {
+            if (modal && modal.style.display === "block") {
+                if (!modal.querySelector('.modal-content').contains(event.target) && event.target !== openBtn) {
+                    modal.style.display = "none";
+                }
+            }
+        }
+
+        // Обработчик быстрого выбора времени
+        function handleQuickTime() {
+            const minutes = this.getAttribute('data-minutes');
+            alert('Вы выбрали ' + minutes + ' минут');
+        }
+
+        // Добавляем функцию проверки доступности потока
+        function checkStreamAvailability(streamUrl) {
+            return new Promise((resolve, reject) => {
+                const testImg = new Image();
+                testImg.onload = () => resolve(true);
+                testImg.onerror = () => reject(false);
+                testImg.src = streamUrl;
+            });
+        }
+
+        // Обновляем функцию setupRtspStreams
+        function setupRtspStreams() {
+            const videoBoxes = document.querySelectorAll('.video-box');
+            
+            videoBoxes.forEach(box => {
+                const iframe = box.querySelector('iframe');
+                if (iframe) {
+                    const streamUrl = iframe.getAttribute('data-stream-url');
+                    
+                    // Проверяем доступность потока
+                    checkStreamAvailability(streamUrl)
+                        .then(() => {
+                            const statusElement = box.querySelector('.camera-status');
+                            if (statusElement) {
+                                statusElement.className = 'camera-status status-online';
+                                statusElement.textContent = 'Подключено';
+                            }
+                        })
+                        .catch(() => {
+                            const statusElement = box.querySelector('.camera-status');
+                            if (statusElement) {
+                                statusElement.className = 'camera-status status-offline';
+                                statusElement.textContent = 'Ошибка подключения';
+                            }
+                        });
+                }
+            });
+        }
+
+        // Функция распознавания номера
+        function recognizeLicensePlate(streamUrl) {
+            const statusElement = document.getElementById('recognition-status');
+            const plateNumber = document.getElementById('plate-number');
+            const plateImageContainer = document.getElementById('plate-image-container');
+            const accessStatus = document.getElementById('access-status');
+            
+            // Сбрасываем предыдущие результаты
+            plateNumber.textContent = 'XXXXXX';
+            document.getElementById('region').textContent = 'XXX';
+            document.getElementById('country').textContent = 'RUS';
+            accessStatus.className = 'access-status denied';
+            accessStatus.textContent = 'Доступ запрещен';
+            
+            // Показываем статус распознавания
+            statusElement.className = 'recognition-status processing';
+            statusElement.innerHTML = '<div class="loading-spinner"></div><span class="loading-text">Распознавание номера...</span>';
+            statusElement.style.display = 'block';
+            
+            // Отправляем запрос на сервер
+            fetch('/api/recognize-license-plate/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ stream_url: streamUrl })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Обновляем номер и информацию о номере
+                    if (data.db_match) {
+                        document.getElementById('plate-number').textContent = data.db_match.plate_number;
+                        document.getElementById('region').textContent = data.db_match.region || 'XXX';
+                        document.getElementById('country').textContent = data.db_match.country || 'RUS';
+                        
+                        // Обновляем статус доступа
+                        if (data.status === 'allowed') {
+                            accessStatus.className = 'access-status allowed';
+                            accessStatus.textContent = 'Доступ разрешен';
+                        } else {
+                            accessStatus.className = 'access-status denied';
+                            accessStatus.textContent = 'Доступ запрещен';
+                        }
+                    } else {
+                        document.getElementById('plate-number').textContent = data.plate_number;
+                        document.getElementById('region').textContent = 'XXX';
+                        document.getElementById('country').textContent = 'RUS';
+                        accessStatus.className = 'access-status denied';
+                        accessStatus.textContent = 'Доступ запрещен';
+                    }
+                    
+                    // Обновляем изображение кадра
+                    if (data.frame_path) {
+                        const plateImageContainer = document.getElementById('plate-image-container');
+                        plateImageContainer.innerHTML = `<img src="${data.frame_path}" alt="Распознанный кадр" style="width: 100%; height: 100%; object-fit: contain;">`;
+                        plateImageContainer.classList.remove('no-image');
+                    }
+                    
+                    // Показываем успешный статус
+                    statusElement.className = 'recognition-status success';
+                    statusElement.innerHTML = `Номер успешно распознан`;
+                } else {
+                    // Показываем ошибку
+                    statusElement.className = 'recognition-status error';
+                    statusElement.textContent = data.message || 'Ошибка при распознавании номера';
+                }
+                
+                // Скрываем статус через 5 секунд
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 5000);
+            })
+            .catch(error => {
+                console.error('Ошибка при распознавании:', error);
+                
+                // Показываем ошибку
+                statusElement.className = 'recognition-status error';
+                statusElement.textContent = 'Ошибка сети при распознавании номера';
+                
+                // Скрываем статус через 5 секунд
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 5000);
+            });
+        }
+
+        // Функция для обновления MJPEG потока
+        function updateMjpegStream(imgElement) {
+            // Эта функция больше не нужна, так как iframe сам обновляет поток
+            return;
+        }
+
+        // Добавляем периодическое обновление всех потоков
+        function startStreamUpdates() {
+            // Эта функция больше не нужна, так как iframe сам обновляет поток
+            return;
+        }
+
+        // Запускаем обновление потоков при загрузке страницы
+        // startStreamUpdates(); // Удаляем вызов, так как функция больше не нужна
+    });
+
+    function updatePlateInfo(data) {
+        const accessStatus = document.getElementById('access-status');
+        const plateImageContainer = document.getElementById('plate-image-container');
+        const plateImage = document.getElementById('plate-image');
+        
+        if (data && data.db_match) {
+            document.getElementById('plate-number').textContent = data.db_match.plate_number;
+            document.getElementById('region').textContent = data.db_match.region || 'XXX';
+            document.getElementById('country').textContent = data.db_match.country || 'RUS';
+            
+            // Если номер найден в базе - зеленый статус
+            accessStatus.className = 'access-status allowed';
+            accessStatus.textContent = 'Доступ разрешен';
+        } else {
+            document.getElementById('plate-number').textContent = 'XXXXXX';
+            document.getElementById('region').textContent = 'XXX';
+            document.getElementById('country').textContent = 'RUS';
+            
+            // Если номер не найден в базе - красный статус
+            accessStatus.className = 'access-status denied';
+            accessStatus.textContent = 'Доступ запрещен';
+        }
+        
+        // Обновляем изображение, если оно есть
+        if (data && data.frame_path) {
+            if (!plateImage) {
+                // Если изображения еще нет, создаем его
+                const img = document.createElement('img');
+                img.id = 'plate-image';
+                img.alt = 'Изображение автомобиля';
+                img.src = data.frame_path;
+                plateImageContainer.appendChild(img);
+                plateImageContainer.classList.remove('no-image');
+            } else {
+                // Если изображение уже есть, обновляем его
+                plateImage.src = data.frame_path;
+                plateImageContainer.classList.remove('no-image');
+            }
+        } else {
+            // Если изображения нет, показываем заглушку
+            if (plateImage) {
+                plateImage.remove();
+            }
+            plateImageContainer.classList.add('no-image');
+        }
+    }
+
+    // Обновляем информацию при получении новых данных
+    socket.on('recognition_result', function(data) {
+        updatePlateInfo(data);
+    });
+</script>
+{% endblock %}
+

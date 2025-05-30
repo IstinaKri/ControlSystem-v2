@@ -1,0 +1,494 @@
+{% extends 'main/guard_base.html' %}
+{% load static %}
+
+{% block title %}Камеры{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        flex: 1;
+        padding: 20px;
+        background: #f3f4f6;
+        overflow-y: auto;
+    }
+
+    .requests-section {
+        background: white;
+        border: 0.1vw solid #ccc;
+        border-radius: 0.5vw;
+        padding: 2vw;
+        height: 100%;
+        width: 100%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+        align-items: center;
+    }
+
+    .filters input[type="text"] {
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .camera-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .camera-card {
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .camera-video {
+        width: 100%;
+        height: 200px;
+        background: #000;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .camera-video:hover {
+        transform: scale(1.02);
+    }
+
+    .camera-video::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, #1a1a1a 25%, #2a2a2a 25%, #2a2a2a 50%, #1a1a1a 50%, #1a1a1a 75%, #2a2a2a 75%, #2a2a2a 100%);
+        background-size: 20px 20px;
+        opacity: 0.3;
+    }
+
+    .camera-status {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        z-index: 1;
+    }
+
+    .status-online {
+        background: #4CAF50;
+        color: white;
+    }
+
+    .status-offline {
+        background: #f44336;
+        color: white;
+    }
+
+    .camera-info {
+        padding: 15px;
+    }
+
+    .camera-info h4 {
+        margin: 0 0 5px;
+        font-size: 16px;
+    }
+
+    .camera-info p {
+        margin: 0;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .camera-type {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        background: #e0e0e0;
+        margin-top: 5px;
+    }
+
+    @media (max-width: 768px) {
+        .camera-list {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Стили для модального окна */
+    .modal {
+        display: none; /* По умолчанию скрыто */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+    }
+
+    .modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        position: relative;
+        width: 90%;
+        max-width: 1200px;
+        max-height: 90vh;
+        background: #000;
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-video {
+        width: 100%;
+        aspect-ratio: 16/9;
+        background: #000;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .modal-header {
+        padding: 15px;
+        background: #1a1a1a;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .modal-title {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0 10px;
+    }
+
+    .modal-controls {
+        padding: 15px;
+        background: #1a1a1a;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .control-button {
+        background: #333;
+        border: none;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .control-button:hover {
+        background: #444;
+    }
+
+    .modal-info {
+        padding: 15px;
+        background: #1a1a1a;
+        color: white;
+        border-top: 1px solid #333;
+        flex-shrink: 0;
+    }
+
+    .modal-info p {
+        margin: 5px 0;
+        font-size: 14px;
+    }
+
+    .multiselect-dropdown {
+        position: relative;
+        min-width: 180px;
+        user-select: none;
+    }
+
+    .multiselect-selected {
+        border: 1px solid #ccc;
+        border-radius: 0.5vw;
+        padding: 0.5vw;
+        background: #fff;
+        cursor: pointer;
+    }
+
+    .multiselect-options {
+        display: none;
+        position: absolute;
+        top: 110%;
+        left: 0;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 0.5vw;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        z-index: 10;
+        min-width: 180px;
+        padding: 0.5vw;
+    }
+
+    .multiselect-options label {
+        display: block;
+        margin-bottom: 0.3vw;
+        font-size: 1vw;
+        cursor: pointer;
+    }
+
+    .multiselect-options label:last-child {
+        margin-bottom: 0;
+    }
+
+    .multiselect-dropdown.open .multiselect-options {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="requests-section" id="main-content">
+        <!-- Поиск и фильтры -->
+        <div class="filters">
+            <input type="text" placeholder="Поиск камер..." id="camera-search">
+            <div class="multiselect-dropdown" id="camera-multiselect">
+                <div class="multiselect-selected" onclick="toggleDropdown()">Фильтры ▼</div>
+                <div class="multiselect-options" id="multiselect-options">
+                    <label><input type="checkbox" value="entry"> Вход</label>
+                    <label><input type="checkbox" value="exit"> Выход</label>
+                    <label><input type="checkbox" value="overview"> Обзорные</label>
+                    <label><input type="checkbox" value="online"> Онлайн</label>
+                    <label><input type="checkbox" value="offline"> Оффлайн</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Камеры -->
+        <div class="camera-list">
+            {% for camera in cameras %}
+            <div class="camera-card" data-camera-id="{{ camera.id }}">
+                <div class="camera-video" onclick="openModal('{{ camera.id }}')">
+                    <div class="camera-status {% if camera.is_online %}status-online{% else %}status-offline{% endif %}">
+                        {% if camera.is_online %}Онлайн{% else %}Офлайн{% endif %}
+                    </div>
+                    <span>Камера {{ camera.name }}</span>
+                </div>
+                <div class="camera-info">
+                    <h4>{{ camera.name }}</h4>
+                    <p>{{ camera.location }}</p>
+                    <span class="camera-type">{{ camera.type }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно -->
+<div id="cameraModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Камера <span id="modalCameraName"></span></div>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-video">
+            <div class="camera-status" id="modalCameraStatus"></div>
+        </div>
+        <div class="modal-controls">
+            <button class="control-button" onclick="toggleFullscreen()">
+                <i class="fas fa-expand"></i> На весь экран
+            </button>
+            <button class="control-button" onclick="toggleMute()">
+                <i class="fas fa-volume-mute"></i> Звук
+            </button>
+            <button class="control-button" onclick="takeSnapshot()">
+                <i class="fas fa-camera"></i> Снимок
+            </button>
+        </div>
+        <div class="modal-info">
+            <p><strong>Местоположение:</strong> <span id="modalCameraLocation"></span></p>
+            <p><strong>Тип:</strong> <span id="modalCameraType"></span></p>
+            <p><strong>Статус:</strong> <span id="modalCameraStatusText"></span></p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('camera-search');
+    const cameraCards = document.querySelectorAll('.camera-card');
+    const filterListbox = document.getElementById('camera-filter-listbox');
+
+    function filterCameras() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedOptions = Array.from(filterListbox.selectedOptions).map(opt => opt.value);
+        const activeFilters = {
+            entry: selectedOptions.includes('entry'),
+            exit: selectedOptions.includes('exit'),
+            overview: selectedOptions.includes('overview'),
+            online: selectedOptions.includes('online'),
+            offline: selectedOptions.includes('offline')
+        };
+        cameraCards.forEach(card => {
+            const cameraName = card.querySelector('h4').textContent.toLowerCase();
+            const cameraLocation = card.querySelector('p').textContent.toLowerCase();
+            const cameraType = card.querySelector('.camera-type').textContent.toLowerCase();
+            const isOnline = card.querySelector('.camera-status').classList.contains('status-online');
+            // Проверка поискового запроса
+            const matchesSearch = cameraName.includes(searchTerm) || cameraLocation.includes(searchTerm);
+            // Проверка фильтров по типу камеры
+            const matchesType = 
+                (!activeFilters.entry && !activeFilters.exit && !activeFilters.overview) ||
+                (activeFilters.entry && cameraType.includes('вход')) ||
+                (activeFilters.exit && cameraType.includes('выход')) ||
+                (activeFilters.overview && cameraType.includes('обзор'));
+            // Проверка фильтров по статусу
+            const matchesStatus = 
+                (!activeFilters.online && !activeFilters.offline) ||
+                (activeFilters.online && isOnline) ||
+                (activeFilters.offline && !isOnline);
+            if (matchesSearch && matchesType && matchesStatus) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+    searchInput.addEventListener('input', filterCameras);
+    filterListbox.addEventListener('change', filterCameras);
+});
+
+// Функции для работы с модальным окном
+function openModal(cameraId) {
+    const modal = document.getElementById('cameraModal');
+    const cameraCard = document.querySelector(`[data-camera-id="${cameraId}"]`);
+    
+    // Заполняем информацию о камере
+    document.getElementById('modalCameraName').textContent = cameraCard.querySelector('h4').textContent;
+    document.getElementById('modalCameraLocation').textContent = cameraCard.querySelector('p').textContent;
+    document.getElementById('modalCameraType').textContent = cameraCard.querySelector('.camera-type').textContent;
+    
+    const isOnline = cameraCard.querySelector('.camera-status').classList.contains('status-online');
+    document.getElementById('modalCameraStatus').className = `camera-status ${isOnline ? 'status-online' : 'status-offline'}`;
+    document.getElementById('modalCameraStatusText').textContent = isOnline ? 'Онлайн' : 'Офлайн';
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden'; // Запрещаем прокрутку страницы
+}
+
+function closeModal() {
+    const modal = document.getElementById('cameraModal');
+    modal.classList.remove('active');
+    document.body.style.overflow = ''; // Разрешаем прокрутку страницы
+}
+
+function toggleFullscreen() {
+    const modalContent = document.querySelector('.modal-content');
+    if (!document.fullscreenElement) {
+        modalContent.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+function toggleMute() {
+    // Здесь будет логика управления звуком
+    console.log('Toggle mute');
+}
+
+function takeSnapshot() {
+    // Здесь будет логика создания снимка
+    console.log('Take snapshot');
+}
+
+function toggleDropdown() {
+    document.getElementById('camera-multiselect').classList.toggle('open');
+}
+
+// Закрытие при клике вне
+document.addEventListener('mousedown', function(e) {
+    const dropdown = document.getElementById('camera-multiselect');
+    if (!dropdown.contains(e.target)) {
+        dropdown.classList.remove('open');
+    }
+});
+
+// Закрытие модального окна при клике вне его
+window.onclick = function(event) {
+    const modal = document.getElementById('cameraModal');
+    if (event.target == modal) {
+        closeModal();
+    }
+}
+
+// Закрытие модального окна по клавише Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeModal();
+    }
+});
+
+// Фильтрация по выбранным чекбоксам
+document.querySelectorAll('#multiselect-options input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', filterCameras);
+});
+document.getElementById('camera-search').addEventListener('input', filterCameras);
+
+function filterCameras() {
+    const searchInput = document.getElementById('camera-search');
+    const cameraCards = document.querySelectorAll('.camera-card');
+    const checked = Array.from(document.querySelectorAll('#multiselect-options input[type="checkbox"]:checked')).map(cb => cb.value);
+
+    cameraCards.forEach(card => {
+        const cameraName = card.querySelector('h4').textContent.toLowerCase();
+        const cameraLocation = card.querySelector('p').textContent.toLowerCase();
+        const cameraType = card.querySelector('.camera-type').textContent.toLowerCase();
+        const isOnline = card.querySelector('.camera-status').classList.contains('status-online');
+        const matchesSearch = cameraName.includes(searchInput.value.toLowerCase()) || cameraLocation.includes(searchInput.value.toLowerCase());
+
+        // Если ничего не выбрано — показываем все
+        let matchesFilter = true;
+        if (checked.length) {
+            matchesFilter = checked.some(f =>
+                (f === 'entry' && cameraType.includes('вход')) ||
+                (f === 'exit' && cameraType.includes('выход')) ||
+                (f === 'overview' && cameraType.includes('обзор')) ||
+                (f === 'online' && isOnline) ||
+                (f === 'offline' && !isOnline)
+            );
+        }
+        card.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

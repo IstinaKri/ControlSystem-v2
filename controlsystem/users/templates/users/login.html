@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="/static/images/octopus.png" />
+    <title>Вход</title>
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #16425b;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        /* Container */
+        .container {
+            background-color: #48779C;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            width: 300px;
+            text-align: center;
+        }
+        
+        /* Title */
+        h2 {
+            margin-bottom: 20px;
+        }
+        
+        /* Input Box */
+        .input-box {
+            margin-bottom: 15px;
+        }
+
+        .input-box input::placeholder {
+            color: #BAC5CD; /* Цвет текста в placeholder */
+        }
+        
+        .input-box input {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+            background-color: #16425B;
+            color: #B7BEC4;
+        }
+        
+        /* Button */
+        .btn {
+            background-color: #16425b;
+            color: #fff;
+            border: none;
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2F6690;
+        }
+        
+        a {
+            color: white; /* Цвет текста ссылок */
+            text-decoration: none; /* Убираем подчеркивание */
+        }
+        
+        a:hover {
+            text-decoration: none; /* Убираем подчеркивание при наведении */
+        }
+        
+        .input-box input::-ms-reveal,
+        .input-box input::-ms-clear {
+            filter: invert(100%);
+        }
+        
+        .input-box input[type="password"]::-ms-reveal {
+            filter: invert(100%);
+        }
+
+        /* Ошибка */
+        .error-message {
+            color: red;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form class="form-box" method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+            <h2>Авторизация</h2>
+            
+            {% if error %}
+                <div class="error-message">{{ error }}</div>
+            {% endif %}
+            
+            <div class="input-box">
+                <input type="text" name="username" placeholder="Логин" required />
+            </div>
+            <div class="input-box">
+                <input type="password" name="password" placeholder="Пароль" required />
+            </div>
+            <button type="submit" class="btn">Войти</button>
+        </form>
+    </div>
+</body>
+</html>
