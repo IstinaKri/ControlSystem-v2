@@ -1,0 +1,527 @@
+{% extends 'main/director_base.html' %}
+{% load static %}
+
+{% block title %}Управление сотрудниками{% endblock %}
+
+{% block page_title %}Управление сотрудниками{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        padding: 20px;
+        background: #f3f4f6;
+        min-height: calc(100vh - 60px);
+    }
+    .requests-section {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+    .employees-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .add-employee-btn {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .add-employee-btn:hover {
+        background: #1d4ed8;
+    }
+
+    .employees-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .employee-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .employee-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .employee-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .employee-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #4b5563;
+    }
+
+    .employee-info h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #1f2937;
+    }
+
+    .employee-info p {
+        margin: 5px 0 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .employee-details {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .detail-label {
+        color: #6b7280;
+    }
+
+    .detail-value {
+        color: #1f2937;
+        font-weight: 500;
+    }
+
+    .employee-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .action-btn {
+        flex: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .edit-btn {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .edit-btn:hover {
+        background: #e5e7eb;
+    }
+
+    .delete-btn {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .delete-btn:hover {
+        background: #fecaca;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background: #dcfce7;
+        color: #059669;
+    }
+
+    .status-inactive {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+
+    .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        font-size: 20px;
+        color: #1f2937;
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #6b7280;
+        cursor: pointer;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #374151;
+        font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .cancel-btn {
+        padding: 10px 20px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: white;
+        color: #374151;
+        cursor: pointer;
+    }
+
+    .save-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        background: #2563eb;
+        color: white;
+        cursor: pointer;
+    }
+
+    .save-btn:hover {
+        background: #1d4ed8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+
+<div class="dashboard-container">
+    <div class="requests-section">
+    <div class="employees-header">
+        <h2>Список сотрудников</h2>
+        <button class="add-employee-btn" onclick="openAddEmployeeModal()">
+            <i class="fas fa-plus"></i>
+            Добавить сотрудника
+        </button>
+    </div>
+<div class="employees-grid">
+    {% for employee in employees %}
+    <div class="employee-card">
+        <div class="employee-header">
+            <div class="employee-avatar">
+                {{ employee.first_name|first }}{{ employee.last_name|first }}
+            </div>
+            <div class="employee-info">
+                <h3>{{ employee.first_name }} {{ employee.last_name }}</h3>
+                <p>{{ employee.position }}</p>
+            </div>
+        </div>
+        <div class="employee-details">
+            <div class="detail-item">
+                <span class="detail-label">Email:</span>
+                <span class="detail-value">{{ employee.email }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Телефон:</span>
+                <span class="detail-value">{{ employee.phone }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Статус:</span>
+                <span class="status-badge {% if employee.is_active %}status-active{% else %}status-inactive{% endif %}">
+                    {% if employee.is_active %}Активен{% else %}Неактивен{% endif %}
+                </span>
+            </div>
+        </div>
+        <div class="employee-actions">
+            <button class="action-btn edit-btn" onclick="openEditEmployeeModal({{ employee.id }})">
+                <i class="fas fa-edit"></i> Изменить
+            </button>
+            <button class="action-btn delete-btn" onclick="deleteEmployee({{ employee.id }})">
+                <i class="fas fa-trash"></i> Удалить
+            </button>
+        </div>
+    </div>
+
+    {% endfor %}
+</div>
+
+<!-- Модальное окно добавления сотрудника -->
+<div id="addEmployeeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Добавить сотрудника</h2>
+            <button class="close-modal" onclick="closeAddEmployeeModal()">&times;</button>
+        </div>
+        <form id="addEmployeeForm">
+            <div class="form-group">
+                <label for="firstName">Имя</label>
+                <input type="text" id="firstName" name="firstName" required>
+            </div>
+            <div class="form-group">
+                <label for="lastName">Фамилия</label>
+                <input type="text" id="lastName" name="lastName" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">Телефон</label>
+                <input type="tel" id="phone" name="phone" required>
+            </div>
+            <div class="form-group">
+                <label for="position">Должность</label>
+                <select id="position" name="position" required>
+                    <option value="">Выберите должность</option>
+                    <option value="guard">Охранник</option>
+                    <option value="senior_guard">Старший охранник</option>
+                    <option value="manager">Менеджер</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="cancel-btn" onclick="closeAddEmployeeModal()">Отмена</button>
+                <button type="submit" class="save-btn">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования сотрудника -->
+<div id="editEmployeeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Редактировать сотрудника</h2>
+            <button class="close-modal" onclick="closeEditEmployeeModal()">&times;</button>
+        </div>
+        <form id="editEmployeeForm">
+            <input type="hidden" id="editEmployeeId">
+            <div class="form-group">
+                <label for="editFirstName">Имя</label>
+                <input type="text" id="editFirstName" name="firstName" required>
+            </div>
+            <div class="form-group">
+                <label for="editLastName">Фамилия</label>
+                <input type="text" id="editLastName" name="lastName" required>
+            </div>
+            <div class="form-group">
+                <label for="editEmail">Email</label>
+                <input type="email" id="editEmail" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="editPhone">Телефон</label>
+                <input type="tel" id="editPhone" name="phone" required>
+            </div>
+            <div class="form-group">
+                <label for="editPosition">Должность</label>
+                <select id="editPosition" name="position" required>
+                    <option value="">Выберите должность</option>
+                    <option value="guard">Охранник</option>
+                    <option value="senior_guard">Старший охранник</option>
+                    <option value="manager">Менеджер</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="editStatus">Статус</label>
+                <select id="editStatus" name="status" required>
+                    <option value="active">Активен</option>
+                    <option value="inactive">Неактивен</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="cancel-btn" onclick="closeEditEmployeeModal()">Отмена</button>
+                <button type="submit" class="save-btn">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openAddEmployeeModal() {
+        document.getElementById('addEmployeeModal').style.display = 'block';
+    }
+
+    function closeAddEmployeeModal() {
+        document.getElementById('addEmployeeModal').style.display = 'none';
+    }
+
+    function openEditEmployeeModal(employeeId) {
+        // Загружаем данные сотрудника
+        fetch(`/director_employees/${employeeId}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка сети');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                document.getElementById('editEmployeeId').value = data.id;
+                document.getElementById('editFirstName').value = data.first_name;
+                document.getElementById('editLastName').value = data.last_name;
+                document.getElementById('editEmail').value = data.email;
+                document.getElementById('editPhone').value = data.phone;
+                document.getElementById('editPosition').value = data.position;
+                document.getElementById('editStatus').value = data.is_active ? 'active' : 'inactive';
+                
+                document.getElementById('editEmployeeModal').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Ошибка при загрузке данных сотрудника:', error);
+                alert('Не удалось загрузить данные сотрудника: ' + error.message);
+            });
+    }
+
+    function closeEditEmployeeModal() {
+        document.getElementById('editEmployeeModal').style.display = 'none';
+    }
+
+    function deleteEmployee(employeeId) {
+        if (confirm('Вы уверены, что хотите удалить этого сотрудника?')) {
+            // Здесь будет отправка запроса на удаление
+            console.log('Удаление сотрудника:', employeeId);
+        }
+    }
+
+    // Обработчики форм
+    document.getElementById('addEmployeeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Собираем данные формы
+        const formData = {
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            position: document.getElementById('position').value
+        };
+        
+        // Отправляем запрос на создание сотрудника
+        fetch('/director_employees/create/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Закрываем модальное окно
+            closeAddEmployeeModal();
+            
+            // Перезагружаем страницу для отображения нового сотрудника
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('Ошибка при создании сотрудника:', error);
+            alert('Не удалось создать сотрудника: ' + error.message);
+        });
+    });
+
+    // Функция для получения CSRF-токена
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    document.getElementById('editEmployeeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        // Здесь будет отправка данных для обновления
+        console.log('Обновление данных сотрудника');
+        closeEditEmployeeModal();
+    });
+</script>
+{% endblock %} 

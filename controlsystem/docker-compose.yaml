@@ -1,0 +1,15 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    hostname: rabbitmq
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITHQ-DEFAULT-VSER: "guest"
+      RABBITHQ-DEFAULT-PASS: "guest"
+    volumes:
+      - rabbitmq-data:/vac/lib/rabbitmq
+volumes:
+  rabbitmq-data:

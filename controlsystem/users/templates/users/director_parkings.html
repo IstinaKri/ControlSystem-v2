@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление парковками</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .main-wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        .dashboard-container {
+            flex: 1;
+            padding: 2rem;
+            background: #f3f4f6;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #1f2937;
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: fixed;
+        }
+
+        .sidebar-header {
+            font-size: 18px;
+            font-weight: bold;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #374151;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        .sidebar ul li {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .sidebar ul li:hover, .sidebar ul li.active {
+            background: #374151;
+        }
+
+        .sidebar i {
+            margin-right: 10px;
+        }
+
+        .content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #1f2937;
+            font-size: 24px;
+        }
+
+        .parking-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .parking-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .parking-card h3 {
+            color: #1f2937;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .parking-info {
+            margin-bottom: 10px;
+        }
+
+        .parking-info p {
+            color: #4b5563;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .add-parking {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .add-parking:hover {
+            background: #2563eb;
+        }
+
+        .user-card {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #111827;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+        }
+
+        .user-info div {
+            margin-left: 10px;
+        }
+
+        .user-info p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .user-info .role {
+            font-size: 12px;
+            color: gray;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+    <div class="main-wrapper">
+        <div class="sidebar">
+            <div class="sidebar-header">Octopus</div>
+            <ul>
+                <li data-page="management"><i class="fas fa-cogs"></i> Главная</li>
+                <li data-page="camera"><i class="fas fa-camera"></i> Пользователи</li>
+                <li data-page="parking"><i class="fas fa-parking"></i> Сотрудники</li>
+                <li data-page="journal"><i class="fas fa-history"></i> Статистика</li>
+                <li data-page="info"><i class="fas fa-info-circle"></i> Информация</li>
+            </ul>
+            <hr style="border: 0; height: 1px; background: #374151; margin: 10px 0;">
+            <div class="user-card">
+                <div class="user-info">
+                    <img src="{% static 'images/octopus_2320358.png' %}" alt="User Avatar">
+                    <div>
+                        <p>Имя: {{ employee.username }}</p>
+                        <p class="role">Роль: {{ employee.get_role_display }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="container">
+                <div class="header">
+                    <h1>Управление парковками</h1>
+                    <button class="add-parking">
+                        <i class="fas fa-plus"></i>
+                        Добавить парковку
+                    </button>
+                </div>
+
+                <div class="parking-grid">
+                    {% for parking in parkings %}
+                    <div class="parking-card">
+                        <h3>{{ parking.name }}</h3>
+                        <div class="parking-info">
+                            <p><strong>ID:</strong> {{ parking.id }}</p>
+                        </div>
+                        <div class="stats">
+                            <div class="stat-item">
+                                <div class="stat-value">{{ parking.occupied_spaces }}</div>
+                                <div class="stat-label">Занято мест</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">{{ parking.total_permissions }}</div>
+                                <div class="stat-label">Разрешений</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="parking-card">
+                        <h3>Нет доступных парковок</h3>
+                        <p>Добавьте новую парковку, используя кнопку выше.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    <script>
+        document.querySelector('.add-parking').addEventListener('click', function() {
+            // Здесь будет логика добавления новой парковки
+            alert('Функция добавления парковки будет реализована позже');
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const links = document.querySelectorAll('.sidebar ul li');
+            const routes = {
+                management: '/director_home/',
+                camera: '/director_employees/',
+                parking: '/director_parkings/',
+                journal: '/director_statistics/',
+                info: '/director_information/'
+            };
+
+            links.forEach(link => {
+                link.addEventListener('click', () => {
+                    const page = link.dataset.page;
+                    const url = routes[page];
+                    if (!url) return;
+
+                    window.location.href = url;
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

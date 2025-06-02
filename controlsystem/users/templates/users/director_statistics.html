@@ -1,0 +1,199 @@
+{% extends 'main/director_base.html' %}
+{% load static %}
+
+{% block title %}Статистика{% endblock %}
+
+{% block page_title %}Статистика{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        padding: 20px;
+        background: #f3f4f6;
+        min-height: calc(100vh - 60px);
+    }
+    .requests-section {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .stat-card h3 {
+        margin: 0 0 10px 0;
+        color: #6b7280;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .stat-trend {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 5px;
+        font-size: 14px;
+    }
+
+    .trend-up {
+        color: #059669;
+    }
+
+    .trend-down {
+        color: #dc2626;
+    }
+
+    .chart-container {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .chart-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .stats-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .stats-table th,
+    .stats-table td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .stats-table th {
+        background: #f3f4f6;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .stats-table tr:hover {
+        background: #f9fafb;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="requests-section">
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Всего посетителей сегодня</h3>
+        <div class="stat-value">{{ today_visitors }}</div>
+    </div>
+    <div class="stat-card">
+            <h3>Всего посетителей</h3>
+        <div class="stat-value">{{ active_visitors }}</div>
+        </div>
+    </div>
+    <table class="stats-table">
+        <thead>
+            <tr>
+                <th>Парковка</th>
+                <th>Всего мест</th>
+                <th>Занято</th>
+                <th>Свободно</th>
+                <th>Загруженность</th>
+            </tr>
+        </thead>
+        <tbody>
+                {% for parking in parking_stats %}
+            <tr>
+                <td>{{ parking.name }}</td>
+                <td>{{ parking.total_spaces }}</td>
+                <td>{{ parking.occupied_spaces }}</td>
+                    <td>{{ parking.free_spaces }}</td>
+                    <td>{{ parking.occupancy_percent }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+<div class="chart-container">
+    <div class="chart-header">
+            <h2 class="chart-title">Посетители по дням (неделя)</h2>
+        </div>
+        <canvas id="visitorsChart" class="chart"></canvas>
+</div>
+
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Данные для графика посетителей
+    const dailyVisitors = {{ daily_visitors|safe }};
+    const visitorData = {
+        labels: dailyVisitors.map(item => item.date),
+        datasets: [{
+            label: 'Количество посетителей',
+            data: dailyVisitors.map(item => item.count),
+            backgroundColor: '#3b82f6',
+            borderColor: '#2563eb',
+            borderWidth: 1
+        }]
+    };
+
+    // Создаем график
+    const ctx = document.getElementById('visitorsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: visitorData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %} 

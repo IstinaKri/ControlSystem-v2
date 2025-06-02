@@ -1,0 +1,178 @@
+{% extends 'main/main_guard_base.html' %}
+{% load static %}
+
+{% block title %}Информация{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        flex: 1;
+        padding: 20px;
+        background: #f3f4f6;
+        overflow-y: auto;
+    }
+
+    .requests-section {
+        background: white;
+        border-radius: 5px;
+        padding: 20px;
+        height: 100%;
+        width: 100%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .info-card h3 {
+        margin: 0 0 15px 0;
+        color: #1e40af;
+    }
+
+    .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .info-list li {
+        padding: 10px 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .info-list li:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #666;
+    }
+
+    .info-value {
+        margin-left: 10px;
+    }
+
+    .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+
+    .status-indicator.online {
+        background: #22c55e;
+    }
+
+    .status-indicator.offline {
+        background: #ef4444;
+    }
+
+    .status-indicator.maintenance {
+        background: #f59e0b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="requests-section" id="main-content">
+        <h2>Информация</h2>
+        <p>Системная информация и статусы</p>
+
+        <div class="container mt-4">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Информация о системе</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <h6>Руководство пользователя</h6>
+                                <p>Для получения подробной информации о работе с системой, пожалуйста, ознакомьтесь с руководством пользователя.</p>
+                                <a href="{% url 'user_guide' %}" class="btn btn-primary">
+                                    <i class="fas fa-book"></i> Открыть руководство
+                                </a>
+                            </div>
+                            <div class="info-grid">
+                                <div class="info-card">
+                                    <h3>Статус системы</h3>
+                                    <ul class="info-list">
+                                        <li>
+                                            <span class="status-indicator online"></span>
+                                            <span class="info-label">Основная система:</span>
+                                            <span class="info-value">Работает</span>
+                                        </li>
+                                        <li>
+                                            <span class="status-indicator online"></span>
+                                            <span class="info-label">База данных:</span>
+                                            <span class="info-value">Активна</span>
+                                        </li>
+                                        <li>
+                                            <span class="status-indicator maintenance"></span>
+                                            <span class="info-label">Резервное копирование:</span>
+                                            <span class="info-value">В процессе</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="info-card">
+                                    <h3>Оборудование</h3>
+                                    <ul class="info-list">
+                                        <li>
+                                            <span class="status-indicator online"></span>
+                                            <span class="info-label">Камеры:</span>
+                                            <span class="info-value">5/6 активны</span>
+                                        </li>
+                                        <li>
+                                            <span class="status-indicator online"></span>
+                                            <span class="info-label">Шлагбаумы:</span>
+                                            <span class="info-value">2/2 работают</span>
+                                        </li>
+                                        <li>
+                                            <span class="status-indicator offline"></span>
+                                            <span class="info-label">Сервер:</span>
+                                            <span class="info-value">Требуется перезагрузка</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="info-card">
+                                    <h3>Статистика</h3>
+                                    <ul class="info-list">
+                                        <li>
+                                            <span class="info-label">Въездов сегодня:</span>
+                                            <span class="info-value">24</span>
+                                        </li>
+                                        <li>
+                                            <span class="info-label">Выездов сегодня:</span>
+                                            <span class="info-value">18</span>
+                                        </li>
+                                        <li>
+                                            <span class="info-label">Свободных мест:</span>
+                                            <span class="info-value">12/50</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

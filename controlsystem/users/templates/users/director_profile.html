@@ -1,0 +1,279 @@
+{% extends 'main/director_base.html' %}
+{% load static %}
+
+{% block title %}Профиль директора{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+    padding: 20px;
+    background: #f3f4f6;
+    min-height: calc(100vh - 60px);
+    }
+    .requests-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    }
+    .profile-container {
+        padding: 30px;
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 30px;
+    }
+
+    .profile-sidebar {
+        position: sticky;
+        top: 30px;
+        height: fit-content;
+    }
+
+    .profile-header {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    .profile-avatar {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        color: #4b5563;
+        font-weight: 500;
+        margin: 0 auto 20px;
+    }
+
+    .profile-info {
+        text-align: center;
+    }
+
+    .profile-name {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 10px;
+    }
+
+    .profile-position {
+        font-size: 18px;
+        color: #6b7280;
+        margin-bottom: 20px;
+    }
+
+    .profile-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        margin-bottom: 20px;
+    }
+
+    .status-active {
+        background: #dcfce7;
+        color: #10b981;
+    }
+
+    .status-inactive {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .work-info {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+    }
+
+    .work-info-title {
+        font-size: 16px;
+        color: #6b7280;
+        margin-bottom: 15px;
+    }
+
+    .work-info-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .work-info-item:last-child {
+        border-bottom: none;
+    }
+
+    .work-info-label {
+        color: #6b7280;
+    }
+
+    .work-info-value {
+        font-weight: 500;
+        color: #1f2937;
+    }
+
+    .profile-content {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .detail-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .detail-title {
+        font-size: 18px;
+        color: #1f2937;
+        margin-bottom: 20px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .detail-title::before {
+        content: '';
+        display: block;
+        width: 4px;
+        height: 20px;
+        background: #3b82f6;
+        border-radius: 2px;
+    }
+
+    .detail-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 15px;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 15px;
+        background: #f9fafb;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .detail-item:hover {
+        background: #f3f4f6;
+    }
+
+    .detail-label {
+        color: #6b7280;
+        font-weight: 500;
+    }
+
+    .detail-value {
+        font-weight: 500;
+        color: #1f2937;
+    }
+
+    .schedule-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .schedule-day {
+        text-align: center;
+        padding: 12px;
+        border-radius: 8px;
+        background: #f3f4f6;
+        font-weight: 500;
+    }
+
+    .schedule-day.active {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .schedule-hours {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f9fafb;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: 500;
+        color: #1f2937;
+    }
+
+    @media (max-width: 1024px) {
+        .profile-container {
+            grid-template-columns: 1fr;
+        }
+
+        .profile-sidebar {
+            position: static;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="requests-section">
+<div class="profile-container">
+    <div class="profile-sidebar">
+        <div class="profile-header">
+            <div class="profile-avatar">ИИ</div>
+            <div class="profile-info">
+                <h1 class="profile-name">Иванов Иван Иванович</h1>
+                <div class="profile-position">Руководитель безопасности</div>
+                <div class="profile-status status-active">
+                    <span class="status-dot"></span>
+                    Активен
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <div class="profile-content">
+        <div class="detail-card">
+            <h2 class="detail-title">Личная информация</h2>
+            <ul class="detail-list">
+                <li class="detail-item">
+                    <span class="detail-label">Дата рождения</span>
+                    <span class="detail-value">01.01.1985</span>
+                </li>
+                <li class="detail-item">
+                    <span class="detail-label">Телефон</span>
+                    <span class="detail-value">+7 (999) 123-45-67</span>
+                </li>
+                <li class="detail-item">
+                    <span class="detail-label">Email</span>
+                    <span class="detail-value">ivanov@example.com</span>
+                </li>
+                <li class="detail-item">
+                    <span class="detail-label">Адрес</span>
+                    <span class="detail-value">г. Москва, ул. Примерная, д. 1</span>
+                </li>
+            </ul>
+        </div>
+
+        
+    </div>
+</div>
+</div>
+</div>
+{% endblock %} 

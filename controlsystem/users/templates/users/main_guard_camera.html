@@ -1,0 +1,112 @@
+{% extends 'main/main_guard_base.html' %}
+{% load static %}
+
+{% block title %}Камеры{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        flex: 1;
+        padding: 20px;
+        background: #f3f4f6;
+        overflow-y: auto;
+    }
+
+    .requests-section {
+        background: white;
+        border-radius: 5px;
+        padding: 20px;
+        height: 100%;
+        width: 100%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+        align-items: center;
+    }
+
+    .filters input[type="text"] {
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .camera-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .camera-card {
+        background: #e5e7eb;
+        padding: 15px;
+        border-radius: 8px;
+        width: calc(33.333% - 10px);
+        box-sizing: border-box;
+    }
+
+    .camera-card h4 {
+        margin: 0 0 5px;
+    }
+
+    .camera-card p {
+        margin: 0;
+        font-size: 14px;
+        color: #333;
+    }
+
+    @media (max-width: 768px) {
+        .camera-card {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="requests-section" id="main-content">
+        <h2>Профиль сотрудника</h2>
+        <p>Профиль</p>
+
+        <!-- Поиск и фильтры -->
+        <div class="filters">
+            <input type="text" placeholder="Поиск камер...">
+
+            <label><input type="checkbox" name="entry"> Вход</label>
+            <label><input type="checkbox" name="exit"> Выход</label>
+            <label><input type="checkbox" name="overview"> Обзорные</label>
+        </div>
+
+        <!-- Камеры (заглушки) -->
+        <div class="camera-list">
+            <div class="camera-card">
+                <h4>Камера 1</h4>
+                <p>Тип: Вход</p>
+            </div>
+            <div class="camera-card">
+                <h4>Камера 2</h4>
+                <p>Тип: Выход</p>
+            </div>
+            <div class="camera-card">
+                <h4>Камера 3</h4>
+                <p>Тип: Обзорная</p>
+            </div>
+            <div class="camera-card">
+                <h4>Камера 4</h4>
+                <p>Тип: Вход</p>
+            </div>
+            <div class="camera-card">
+                <h4>Камера 5</h4>
+                <p>Тип: Обзорная</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

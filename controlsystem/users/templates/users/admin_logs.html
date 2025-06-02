@@ -1,0 +1,209 @@
+{% extends 'main/admin_base.html' %}
+{% load static %}
+
+{% block title %}Логи системы{% endblock %}
+
+{% block page_title %}Логи системы{% endblock %}
+
+{% block extra_css %}
+<style>
+    .logs-container {
+        padding: 20px;
+        background: #f3f4f6;
+        min-height: calc(100vh - 60px);
+    }
+    .logs-content {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        padding: 20px;
+    }
+    .logs-header {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    .logs-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+    .nav-tabs {
+        border-bottom: 2px solid #e5e7eb;
+        margin-bottom: 20px;
+    }
+    .nav-tabs .nav-link {
+        border: none;
+        border-radius: 6px 6px 0 0;
+        color: #374151;
+        font-weight: 500;
+        background: #f3f4f6;
+        margin-right: 2px;
+    }
+    .nav-tabs .nav-link.active {
+        background: #fff;
+        color: #2563eb;
+        border-bottom: 2px solid #2563eb;
+    }
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .table th {
+        background: #f9fafb;
+        padding: 12px;
+        text-align: left;
+        font-weight: 500;
+        color: #4b5563;
+        border-bottom: 2px solid #e5e7eb;
+    }
+    .table td {
+        padding: 12px;
+        border-bottom: 1px solid #e5e7eb;
+        color: #1f2937;
+    }
+    .table tr:hover {
+        background: #f9fafb;
+    }
+    .badge-info {
+        background: #2563eb;
+        color: #fff;
+        font-size: 13px;
+        border-radius: 4px;
+        padding: 4px 8px;
+        margin-right: 4px;
+    }
+    .badge-success {
+        background: #059669;
+        color: #fff;
+        font-size: 13px;
+        border-radius: 4px;
+        padding: 4px 8px;
+        margin-right: 4px;
+    }
+    .badge-secondary {
+        background: #6b7280;
+        color: #fff;
+        font-size: 13px;
+        border-radius: 4px;
+        padding: 4px 8px;
+        margin-right: 4px;
+    }
+    .tab-content {
+        margin-top: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="logs-container">
+    <div class="logs-content">
+        <div class="logs-header">
+            <h1 class="logs-title">Логи системы</h1>
+        </div>
+        <ul class="nav nav-tabs" id="logTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="visitlog-tab" data-bs-toggle="tab" data-bs-target="#visitlog" type="button" role="tab">Журнал посещений</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="plate-tab" data-bs-toggle="tab" data-bs-target="#plate" type="button" role="tab">Распознавание номеров</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit" type="button" role="tab">Аудит</button>
+            </li>
+        </ul>
+        <div class="tab-content" id="logTabsContent">
+            <!-- VisitLog -->
+            <div class="tab-pane fade show active" id="visitlog" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table visit-table">
+                        <thead>
+                            <tr>
+                                <th>Время входа</th>
+                                <th>Время выхода</th>
+                                <th>Посетитель</th>
+                                <th>Машина</th>
+                                <th>Парковка</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in visit_logs %}
+                            <tr>
+                                <td>{{ log.entry_time|date:'d.m.Y H:i' }}</td>
+                                <td>{% if log.exit_time %}{{ log.exit_time|date:'d.m.Y H:i' }}{% endif %}</td>
+                                <td>{{ log.visitor.get_full_name }}</td>
+                                <td>{% if log.car %}{{ log.car.brand }} {{ log.car.model }} ({{ log.car.license_plate }}){% endif %}</td>
+                                <td>{% if log.parking %}{{ log.parking.name }}{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- PlateRecognitionLog -->
+            <div class="tab-pane fade" id="plate" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table visit-table">
+                        <thead>
+                            <tr>
+                                <th>Время</th>
+                                <th>Номер</th>
+                                <th>Камера</th>
+                                <th>Парковка</th>
+                                <th>Уверенность</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in plate_logs %}
+                            <tr>
+                                <td>{{ log.timestamp|date:'d.m.Y H:i:s' }}</td>
+                                <td>{{ log.license_plate }}</td>
+                                <td>{% if log.camera %}{{ log.camera.name }}{% endif %}</td>
+                                <td>{% if log.parking %}{{ log.parking.name }}{% endif %}</td>
+                                <td>{{ log.confidence }}</td>
+                                <td>{{ log.status }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- AuditLog -->
+            <div class="tab-pane fade" id="audit" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table visit-table">
+                        <thead>
+                            <tr>
+                                <th>Время</th>
+                                <th>Пользователь</th>
+                                <th>Действие</th>
+                                <th>Описание</th>
+                                <th>Парковка</th>
+                                <th>Камера</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in audit_logs %}
+                            <tr>
+                                <td>{{ log.timestamp|date:'d.m.Y H:i:s' }}</td>
+                                <td>{% if log.user %}{{ log.user.get_full_name }}{% endif %}</td>
+                                <td>{{ log.get_action_type_display }}</td>
+                                <td>{{ log.description }}</td>
+                                <td>{% if log.target_parking %}<span class="badge badge-success">{{ log.target_parking.name }}</span>{% endif %}</td>
+                                <td>{% if log.target_camera %}<span class="badge badge-secondary">{{ log.target_camera.name }}</span>{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

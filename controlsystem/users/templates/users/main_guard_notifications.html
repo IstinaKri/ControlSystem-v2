@@ -1,0 +1,157 @@
+{% extends 'main/main_guard_base.html' %}
+{% load static %}
+
+{% block title %}Уведомления{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        flex: 1;
+        padding: 20px;
+        background: #f3f4f6;
+        overflow-y: auto;
+    }
+
+    .requests-section {
+        background: white;
+        border-radius: 5px;
+        padding: 20px;
+        height: 100%;
+        width: 100%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .notification-list {
+        margin-top: 20px;
+    }
+
+    .notification-item {
+        padding: 15px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .notification-item:last-child {
+        border-bottom: none;
+    }
+
+    .notification-item.unread {
+        background: #f0f9ff;
+    }
+
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+
+    .notification-icon.alert {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .notification-icon.info {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .notification-content {
+        flex: 1;
+    }
+
+    .notification-title {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .notification-time {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .notification-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .notification-actions button {
+        padding: 5px 10px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+    .notification-actions .mark-read {
+        background: #e5e7eb;
+        color: #333;
+    }
+
+    .notification-actions .delete {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="requests-section" id="main-content">
+        <h2>Уведомления</h2>
+        <p>Системные уведомления и оповещения</p>
+
+        <div class="notification-list">
+            <div class="notification-item unread">
+                <div class="notification-icon alert">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">Обнаружено нарушение</div>
+                    <div class="notification-text">Автомобиль с номером A123BC превысил скорость на въезде</div>
+                    <div class="notification-time">10:30</div>
+                </div>
+                <div class="notification-actions">
+                    <button class="mark-read">Прочитано</button>
+                    <button class="delete">Удалить</button>
+                </div>
+            </div>
+
+            <div class="notification-item">
+                <div class="notification-icon info">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">Новое сообщение</div>
+                    <div class="notification-text">У вас есть новое сообщение от администратора</div>
+                    <div class="notification-time">09:15</div>
+                </div>
+                <div class="notification-actions">
+                    <button class="mark-read">Прочитано</button>
+                    <button class="delete">Удалить</button>
+                </div>
+            </div>
+
+            <div class="notification-item">
+                <div class="notification-icon alert">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">Системное предупреждение</div>
+                    <div class="notification-text">Камера 1 требует обслуживания</div>
+                    <div class="notification-time">08:45</div>
+                </div>
+                <div class="notification-actions">
+                    <button class="mark-read">Прочитано</button>
+                    <button class="delete">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,728 @@
+{% extends 'main/admin_base.html' %}
+{% load static %}
+
+{% block title %}Управление камерами{% endblock %}
+
+{% block page_title %}Управление камерами{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        padding: 20px;
+        background: #f3f4f6;
+        min-height: calc(100vh - 60px);
+    }
+    
+    .cameras-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .camera-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    .camera-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .camera-preview {
+        width: 100%;
+        height: 200px;
+        background: #000;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        overflow: hidden;
+    }
+    
+    .camera-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .camera-info {
+        margin-bottom: 10px;
+    }
+    
+    .camera-name {
+        font-weight: bold;
+        font-size: 1.1em;
+        margin-bottom: 5px;
+    }
+    
+    .camera-type {
+        color: #666;
+        font-size: 0.9em;
+    }
+
+    /* Стили для модальных окон */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+
+    .modal-content {
+        position: relative;
+        background: linear-gradient(120deg, #f8fafc 80%, #e9f0fb 100%);
+        width: 90%;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-title {
+        font-size: 1.5em;
+        font-weight: bold;
+    }
+
+    .close-modal {
+        font-size: 2.2em;
+        color: #aaa;
+        background: none;
+        border: none;
+        cursor: pointer;
+        transition: color 0.2s, transform 0.2s;
+        line-height: 1;
+        padding: 0 8px;
+    }
+
+    .close-modal:hover {
+        color: #007bff;
+        transform: scale(1.15) rotate(90deg);
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 1em;
+        box-shadow: 0 2px 8px rgba(0,123,255,0.08);
+        margin: 0;
+    }
+
+    .btn-primary {
+        background: linear-gradient(90deg, #007bff 60%, #0056b3 100%);
+        border: none;
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #333;
+        border: 1px solid #ced4da;
+    }
+
+    .btn-primary:hover, .btn-secondary:hover {
+        filter: brightness(0.95);
+    }
+
+    .video-container {
+        position: relative;
+        width: 100%;
+        height: 400px;
+        background: #000;
+        margin-bottom: 20px;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .video-stream {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .selection-tools {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .selection-tool {
+        padding: 10px 18px;
+        font-size: 1em;
+        border-radius: 8px;
+        border-width: 2px;
+        transition: background 0.2s, color 0.2s;
+    }
+
+    .selection-tool:hover {
+        background: #e9f0fb;
+        color: #0056b3;
+    }
+
+    .selection-tool.active {
+        background: #007bff;
+        color: #fff;
+        border-color: #0056b3;
+    }
+
+    .coordinates-display {
+        background: #f8f9fa;
+        border-radius: 10px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        padding: 16px;
+        margin-top: 10px;
+    }
+
+    .coordinates-item {
+        margin-bottom: 5px;
+    }
+
+    .coordinates-label {
+        font-weight: 500;
+        color: #666;
+    }
+
+    .add-camera-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #007bff;
+        color: white;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+    }
+    
+    .add-camera-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    .delete-camera-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 5px 10px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    
+    .camera-card:hover .delete-camera-btn {
+        opacity: 1;
+    }
+
+    .coordinates-flex {
+        display: flex;
+        gap: 24px;
+        padding: 10px 0;
+        align-items: flex-start;
+    }
+
+    .video-container {
+        width: 60%;
+        min-width: 320px;
+        max-width: 500px;
+        height: 400px;
+        background: #000;
+        margin-bottom: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    }
+
+    .tools-container {
+        width: 40%;
+        min-width: 250px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .btn-row {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+        margin-top: 20px;
+        width: 100%;
+    }
+
+    .btn-row .btn {
+        width: 100%;
+        min-width: 120px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="cameras-grid">
+        {% for camera in cameras %}
+        <div class="camera-card" onclick="openCameraModal({{ camera.id }})">
+            <button class="delete-camera-btn" onclick="deleteCamera({{ camera.id }}, event)">Удалить</button>
+            <div class="camera-preview">
+                <img src="{{ camera.stream_url }}" alt="Превью камеры">
+            </div>
+            <div class="camera-info">
+                <div class="camera-name">{{ camera.name }}</div>
+                <div class="camera-type">{{ camera.camera_type }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <button class="add-camera-btn" onclick="openAddCameraModal()">+</button>
+</div>
+
+<!-- Первое модальное окно - базовая информация о камере -->
+<div class="modal" id="cameraInfoModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Информация о камере</h3>
+            <button class="close-modal" onclick="closeCameraInfoModal()">&times;</button>
+        </div>
+        <form id="cameraInfoForm">
+            <input type="hidden" name="camera_id" id="cameraId">
+            
+            <div class="form-group">
+                <label class="form-label">Название камеры</label>
+                <input type="text" class="form-control" name="name" id="cameraName" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">URL потока</label>
+                <input type="text" class="form-control" name="stream_url" id="streamUrl" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Тип камеры</label>
+                <select class="form-control" name="camera_type" id="cameraType" required>
+                    <option value="barrier">На шлагбаум</option>
+                    <option value="overview">Обзорная</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Логин</label>
+                <input type="text" class="form-control" name="login" id="cameraLogin">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Пароль</label>
+                <input type="password" class="form-control" name="password" id="cameraPassword">
+            </div>
+            
+            <div class="form-group">
+                <button type="button" class="btn btn-primary" onclick="saveCameraInfo()">Сохранить</button>
+                <button type="button" class="btn btn-secondary" onclick="openCoordinatesModal()">Настроить координаты</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Второе модальное окно - настройка координат -->
+<div class="modal" id="coordinatesModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                Настройка координат
+            </h3>
+            <button class="close-modal" onclick="closeCoordinatesModal()" aria-label="Закрыть">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="coordinates-flex">
+            <div class="video-container">
+                <img id="videoStream" class="video-stream" src="{% static 'images/cum.png' %}" alt="Видеопоток">
+            </div>
+            <div class="tools-container">
+                <div class="coordinates-display">
+                    <h4>Координаты областей</h4>
+                    <div class="coordinates-item">
+                    <div class="selection-tools">
+                    <button class="selection-tool" onclick="setSelectionMode('car')">Выбрать область машины</button>
+                </div>
+                        <span class="coordinates-label">Область машины:</span>
+                        <span id="carCoordinates">X: 0, Y: 0, Ширина: 0, Высота: 0</span>
+                    </div>
+                    <div class="selection-tools">
+                    <button class="selection-tool" onclick="setSelectionMode('plate')">Выбрать область номера</button>
+                </div>
+                    <div class="coordinates-item">
+                        <span class="coordinates-label">Область номера:</span>
+                        <span id="plateCoordinates">X: 0, Y: 0, Ширина: 0, Высота: 0</span>
+                    </div>
+                </div>
+                <div class="form-group btn-row">
+                    <button type="button" class="btn btn-primary" onclick="saveCoordinates()">Сохранить координаты</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCoordinatesModal()">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для добавления новой камеры -->
+<div class="modal" id="addCameraModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Добавить новую камеру</h3>
+            <button class="close-modal" onclick="closeAddCameraModal()">&times;</button>
+        </div>
+        <form id="addCameraForm">
+            <div class="form-group">
+                <label class="form-label">Название камеры</label>
+                <input type="text" class="form-control" name="name" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">URL потока</label>
+                <input type="text" class="form-control" name="stream_url" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Тип камеры</label>
+                <select class="form-control" name="camera_type" required>
+                    <option value="barrier">На шлагбаум</option>
+                    <option value="overview">Обзорная</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Логин</label>
+                <input type="text" class="form-control" name="login">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Пароль</label>
+                <input type="password" class="form-control" name="password">
+            </div>
+            
+            <div class="form-group">
+                <button type="button" class="btn btn-primary" onclick="addCamera()">Добавить</button>
+                <button type="button" class="btn btn-secondary" onclick="closeAddCameraModal()">Отмена</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentCamera = null;
+let currentSelectionMode = null;
+let isDrawing = false;
+let startX, startY;
+let currentRect = null;
+
+function openCameraModal(cameraId) {
+    currentCamera = cameraId;
+    document.getElementById('cameraInfoModal').style.display = 'block';
+
+    // Очистка полей перед загрузкой новых данных
+    document.getElementById('cameraId').value = '';
+    document.getElementById('cameraName').value = '';
+    document.getElementById('streamUrl').value = '';
+    document.getElementById('cameraType').value = '';
+    document.getElementById('cameraLogin').value = '';
+    document.getElementById('cameraPassword').value = '';
+
+    // Загрузка данных камеры
+    fetch(`/get_camera/${cameraId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+            document.getElementById('cameraId').value = data.id || '';
+            document.getElementById('cameraName').value = data.name || '';
+            document.getElementById('streamUrl').value = data.stream_url || '';
+            document.getElementById('cameraType').value = data.camera_type || '';
+            document.getElementById('cameraLogin').value = data.login || '';
+            document.getElementById('cameraPassword').value = data.password || '';
+        })
+        .catch(err => {
+            alert('Ошибка загрузки данных камеры: ' + err);
+        });
+}
+
+function closeCameraInfoModal() {
+    document.getElementById('cameraInfoModal').style.display = 'none';
+    currentCamera = null;
+}
+
+function openCoordinatesModal() {
+    closeCameraInfoModal();
+    document.getElementById('coordinatesModal').style.display = 'block';
+    
+    // Загрузка текущих координат
+    fetch(`/get_camera/${currentCamera}/`)
+        .then(response => response.json())
+        .then(data => {
+            updateCoordinatesDisplay(data);
+        });
+}
+
+function closeCoordinatesModal() {
+    document.getElementById('coordinatesModal').style.display = 'none';
+    currentSelectionMode = null;
+    isDrawing = false;
+}
+
+function setSelectionMode(mode) {
+    currentSelectionMode = mode;
+    document.querySelectorAll('.selection-tool').forEach(tool => {
+        tool.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    const videoStream = document.getElementById('videoStream');
+    videoStream.style.cursor = 'crosshair';
+}
+
+function saveCameraInfo() {
+    const formData = {
+        id: document.getElementById('cameraId').value,
+        name: document.getElementById('cameraName').value,
+        stream_url: document.getElementById('streamUrl').value,
+        camera_type: document.getElementById('cameraType').value,
+        login: document.getElementById('cameraLogin').value,
+        password: document.getElementById('cameraPassword').value
+    };
+    
+    fetch('/update_camera/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Настройки сохранены');
+            location.reload();
+        } else {
+            alert('Ошибка при сохранении настроек');
+        }
+    });
+}
+
+function saveCoordinates() {
+    const coordinates = {
+        camera_id: currentCamera,
+        car_roi_x: parseInt(document.getElementById('carCoordinates').textContent.split('X: ')[1].split(',')[0]),
+        car_roi_y: parseInt(document.getElementById('carCoordinates').textContent.split('Y: ')[1].split(',')[0]),
+        car_roi_width: parseInt(document.getElementById('carCoordinates').textContent.split('Ширина: ')[1].split(',')[0]),
+        car_roi_height: parseInt(document.getElementById('carCoordinates').textContent.split('Высота: ')[1]),
+        plate_roi_x: parseInt(document.getElementById('plateCoordinates').textContent.split('X: ')[1].split(',')[0]),
+        plate_roi_y: parseInt(document.getElementById('plateCoordinates').textContent.split('Y: ')[1].split(',')[0]),
+        plate_roi_width: parseInt(document.getElementById('plateCoordinates').textContent.split('Ширина: ')[1].split(',')[0]),
+        plate_roi_height: parseInt(document.getElementById('plateCoordinates').textContent.split('Высота: ')[1])
+    };
+    
+    fetch('/save_camera_coordinates/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(coordinates)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Координаты сохранены');
+            closeCoordinatesModal();
+        } else {
+            alert('Ошибка при сохранении координат');
+        }
+    });
+}
+
+function updateCoordinatesDisplay(data) {
+    document.getElementById('carCoordinates').textContent = 
+        `X: ${data.car_roi_x}, Y: ${data.car_roi_y}, Ширина: ${data.car_roi_width}, Высота: ${data.car_roi_height}`;
+    document.getElementById('plateCoordinates').textContent = 
+        `X: ${data.plate_roi_x}, Y: ${data.plate_roi_y}, Ширина: ${data.plate_roi_width}, Высота: ${data.plate_roi_height}`;
+}
+
+// Обработчики событий для выделения области
+document.getElementById('videoStream').addEventListener('mousedown', function(e) {
+    if (!currentSelectionMode) return;
+    
+    isDrawing = true;
+    const rect = e.target.getBoundingClientRect();
+    startX = e.clientX - rect.left;
+    startY = e.clientY - rect.top;
+    
+    if (currentRect) {
+        currentRect.remove();
+    }
+    
+    currentRect = document.createElement('div');
+    currentRect.style.position = 'absolute';
+    currentRect.style.border = '2px solid red';
+    currentRect.style.backgroundColor = 'rgba(255, 0, 0, 0.2)';
+    e.target.parentNode.appendChild(currentRect);
+});
+
+document.getElementById('videoStream').addEventListener('mousemove', function(e) {
+    if (!isDrawing) return;
+    
+    const rect = e.target.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+    
+    const width = Math.abs(currentX - startX);
+    const height = Math.abs(currentY - startY);
+    const left = Math.min(currentX, startX);
+    const top = Math.min(currentY, startY);
+    
+    currentRect.style.left = left + 'px';
+    currentRect.style.top = top + 'px';
+    currentRect.style.width = width + 'px';
+    currentRect.style.height = height + 'px';
+});
+
+document.getElementById('videoStream').addEventListener('mouseup', function(e) {
+    if (!isDrawing) return;
+    
+    isDrawing = false;
+    const rect = e.target.getBoundingClientRect();
+    const endX = e.clientX - rect.left;
+    const endY = e.clientY - rect.top;
+    
+    const width = Math.abs(endX - startX);
+    const height = Math.abs(endY - startY);
+    const left = Math.min(endX, startX);
+    const top = Math.min(endY, startY);
+    
+    if (currentSelectionMode === 'car') {
+        document.getElementById('carCoordinates').textContent = 
+            `X: ${Math.round(left)}, Y: ${Math.round(top)}, Ширина: ${Math.round(width)}, Высота: ${Math.round(height)}`;
+    } else {
+        document.getElementById('plateCoordinates').textContent = 
+            `X: ${Math.round(left)}, Y: ${Math.round(top)}, Ширина: ${Math.round(width)}, Высота: ${Math.round(height)}`;
+    }
+});
+
+// Функция для получения CSRF-токена
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function openAddCameraModal() {
+    document.getElementById('addCameraModal').style.display = 'block';
+}
+
+function closeAddCameraModal() {
+    document.getElementById('addCameraModal').style.display = 'none';
+}
+
+function addCamera() {
+    const form = document.getElementById('addCameraForm');
+    const formData = {
+        name: form.querySelector('[name="name"]').value,
+        stream_url: form.querySelector('[name="stream_url"]').value,
+        camera_type: form.querySelector('[name="camera_type"]').value,
+        login: form.querySelector('[name="login"]').value,
+        password: form.querySelector('[name="password"]').value
+    };
+    
+    fetch('/add_camera/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Камера успешно добавлена');
+            location.reload();
+        } else {
+            alert('Ошибка при добавлении камеры: ' + data.error);
+        }
+    });
+}
+
+function deleteCamera(cameraId, event) {
+    event.stopPropagation(); // Предотвращаем открытие модального окна при клике на кнопку удаления
+    
+    if (confirm('Вы уверены, что хотите удалить эту камеру?')) {
+        fetch(`/delete_camera/${cameraId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Камера успешно удалена');
+                location.reload();
+            } else {
+                alert('Ошибка при удалении камеры: ' + data.error);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
+

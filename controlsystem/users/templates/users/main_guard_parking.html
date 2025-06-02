@@ -1,0 +1,815 @@
+{% extends 'main/main_guard_base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Парковка{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        flex: 1;
+        height: 100%;
+        padding: 20px;
+        background: #f3f4f6;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+
+    .parking-content {
+        display: flex;
+        gap: 30px;
+        padding: 30px;
+        background-color: #ffffff;
+        height: calc(100vh - 140px);
+        width: 100%;
+        margin: 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        box-sizing: border-box;
+    }
+    
+    .content-grid {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 30px;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+    }
+    
+    .parking-list {
+        display: flex;
+        flex-direction: column;
+        border-radius: 8px;
+        padding: 0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        overflow-y: auto;
+        height: 100%;
+    }
+    
+    .parking-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border: 1px solid #e0e0e0;
+        margin-bottom: 10px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .parking-item:hover {
+        background: #e0f7fa;
+    }
+    
+    .parking-item.active {
+        border: 2px solid #10b981;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+    
+    .parking-item.active .status-indicator.status-online {
+        background: #4ade80;
+        box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.3);
+    }
+    
+    .parking-item.active .status-indicator.status-offline {
+        background: #ef4444;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+    }
+    
+    .status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+    
+    .status-online {
+        background: #10b981;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+    
+    .status-offline {
+        background: #ef4444;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+    }
+    
+    .parking-details {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        height: 100%;
+        overflow-y: auto;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+    
+    .stat-card {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .stat-title {
+        color: #6b7280;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+    
+    .stat-value {
+        font-size: 18px;
+        font-weight: 500;
+    }
+    
+    .stat-value.good {
+        color: #10b981;
+    }
+    
+    .stat-value.warning {
+        color: #f59e0b;
+    }
+    
+    .stat-value.error {
+        color: #ef4444;
+    }
+    
+    .employees-section {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e5e7eb;
+        margin-top: 20px;
+    }
+    
+    .section-title {
+        color: #1f2937;
+        font-size: 18px;
+        margin-bottom: 20px;
+    }
+    
+    .employees-grid {
+        display: grid;
+        gap: 15px;
+    }
+    
+    .employee-card {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        border: 1px solid #e5e7eb;
+        position: relative;
+    }
+    
+    .employee-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #4b5563;
+        font-weight: 500;
+    }
+    
+    .employee-info {
+        flex: 1;
+    }
+    
+    .employee-name {
+        color: #1f2937;
+        margin-bottom: 4px;
+        font-weight: 500;
+    }
+    
+    .employee-position {
+        color: #6b7280;
+        font-size: 14px;
+    }
+    
+    .employee-status {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .status-active {
+        background: #dcfce7;
+        color: #10b981;
+    }
+    
+    .status-break {
+        background: #fff7ed;
+        color: #f59e0b;
+    }
+    
+    .no-employees {
+        color: #6b7280;
+        text-align: center;
+        padding: 20px;
+        font-style: italic;
+    }
+
+    .parking-info {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .parking-name {
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .parking-address {
+        font-size: 14px;
+        color: #6b7280;
+    }
+
+    .parking-status {
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        background: #e5e7eb;
+        color: #4b5563;
+    }
+
+    .parking-status.active {
+        background: #dcfce7;
+        color: #10b981;
+    }
+
+    .parking-status.inactive {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+    
+    .spots-value {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .manager-section {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e5e7eb;
+        margin-top: 20px;
+    }
+
+    .manager-card {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .manager-photo {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e5e7eb;
+    }
+
+    .manager-info {
+        flex: 1;
+    }
+
+    .manager-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 5px;
+    }
+
+    .manager-position {
+        color: #6b7280;
+        margin-bottom: 8px;
+    }
+
+    .manager-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .manager-status.on-site {
+        background: #dcfce7;
+        color: #10b981;
+    }
+
+    .manager-status.off-site {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    .status-dot.on-site {
+        background: #10b981;
+    }
+
+    .status-dot.off-site {
+        background: #ef4444;
+    }
+
+    .add-employee-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px;
+        background: #f3f4f6;
+        border: 2px dashed #d1d5db;
+        border-radius: 8px;
+        color: #4b5563;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 15px;
+    }
+
+    .add-employee-btn:hover {
+        background: #e5e7eb;
+        border-color: #9ca3af;
+    }
+
+    .add-employee-btn i {
+        font-size: 20px;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+
+    .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #6b7280;
+        cursor: pointer;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 16px;
+    }
+
+    .guards-list {
+        display: grid;
+        gap: 15px;
+    }
+
+    .guard-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .guard-item:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+    }
+
+    .guard-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #4b5563;
+        font-weight: 500;
+    }
+
+    .guard-info {
+        flex: 1;
+    }
+
+    .guard-name {
+        font-weight: 500;
+        color: #1f2937;
+        margin-bottom: 4px;
+    }
+
+    .guard-position {
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .add-guard-btn {
+        padding: 8px 16px;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .add-guard-btn:hover {
+        background: #2563eb;
+    }
+
+    .remove-employee-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        color: #ef4444;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        opacity: 0;
+    }
+
+    .employee-card:hover .remove-employee-btn {
+        opacity: 1;
+    }
+
+    .remove-employee-btn:hover {
+        background: #fee2e2;
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.3s ease;
+    }
+
+    .toast.success {
+        background: #10b981;
+    }
+
+    .toast.error {
+        background: #ef4444;
+    }
+
+    .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .parking-list {
+            height: 200px;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="parking-content">
+        <div class="content-grid">
+            <div class="parking-list">
+                {% for parking in parkings %}
+                <a href="#" class="parking-item {% if forloop.first %}active{% endif %}" 
+                   data-parking="{{ parking.name }}"
+                   data-occupied="{{ parking.occupied_spaces }}" 
+                   data-total="{{ parking.total_spaces }}" 
+                   data-status="{{ parking.status }}">
+                    <div class="parking-info">
+                        <div class="parking-name">{{ parking.name }}</div>
+                        <div class="parking-address">{{ parking.address }}</div>
+                        <div class="parking-status {{ parking.status }}">
+                            {% if parking.status == 'active' %}Работает{% else %}Не работает{% endif %}
+                        </div>
+                    </div>
+                    <span class="spots-value">{{ parking.occupied_spaces }}/{{ parking.total_spaces }}</span>
+                </a>
+                {% endfor %}
+            </div>
+            
+            <div class="parking-details">
+                {% for parking in parkings %}
+                <div class="parking-stats" data-parking="{{ parking.name }}" {% if not forloop.first %}style="display: none;"{% endif %}>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-title">Занято мест</div>
+                            <div class="stat-value {% if parking.occupied_spaces < parking.total_spaces %}good{% else %}error{% endif %}">
+                                {{ parking.occupied_spaces }}/{{ parking.total_spaces }}
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">Камеры</div>
+                            <div class="stat-value">
+                                {{ parking.cameras_count }}
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">Статус</div>
+                            <div class="stat-value {% if parking.status == 'active' %}good{% else %}error{% endif %}">
+                                {% if parking.status == 'active' %}Работает{% else %}Не работает{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="employees-section">
+                    <h3 class="section-title">Сотрудники на парковке</h3>
+                    <div class="employees-grid" id="employeesList">
+                        {% for parking in parkings %}
+                        <div class="parking-employees" data-parking="{{ parking.name }}" {% if not forloop.first %}style="display: none;"{% endif %}>
+                            {% for employee in parking.employees %}
+                            <div class="employee-card">
+                                <div class="employee-avatar">{{ employee.user.first_name|slice:":1" }}{{ employee.user.last_name|slice:":1" }}</div>
+                                <div class="employee-info">
+                                    <div class="employee-name">{{ employee.user.last_name }} {{ employee.user.first_name }} {{ employee.user.middle_name }}</div>
+                                    <div class="employee-position">{{ employee.user.get_role_display }}</div>
+                                </div>
+                                <div class="employee-status status-active">На месте</div>
+                                <button class="remove-employee-btn" onclick="removeEmployee({{ employee.user.id }})">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            {% empty %}
+                            <div class="no-employees">Нет назначенных сотрудников</div>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button class="add-employee-btn" onclick="openAddEmployeeModal()">
+                        <i class="fas fa-plus"></i>
+                        Добавить сотрудника
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления сотрудника -->
+<div class="modal" id="addEmployeeModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Добавить сотрудника</h3>
+            <button class="close-modal" onclick="closeAddEmployeeModal()">&times;</button>
+        </div>
+        <input type="text" class="search-input" placeholder="Поиск сотрудников..." onkeyup="searchGuards(this.value)">
+        <div class="guards-list" id="guardsList">
+            {% for guard in available_guards %}
+            <div class="guard-item">
+                <div class="guard-avatar">{{ guard.first_name|slice:":1" }}{{ guard.last_name|slice:":1" }}</div>
+                <div class="guard-info">
+                    <div class="guard-name">{{ guard.last_name }} {{ guard.first_name }} {{ guard.middle_name }}</div>
+                    <div class="guard-position">{{ guard.get_role_display }}</div>
+                </div>
+                <button class="add-guard-btn" onclick="addGuard({{ guard.id }}, '{{ current_parking_name }}')">Добавить</button>
+            </div>
+            {% empty %}
+            <div>Нет доступных охранников</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработчик клика по парковке
+    document.querySelectorAll('.parking-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Убираем активный класс у всех парковок
+            document.querySelectorAll('.parking-item').forEach(p => p.classList.remove('active'));
+            // Добавляем активный класс выбранной парковке
+            this.classList.add('active');
+            
+            // Показываем статистику выбранной парковки
+            const parkingName = this.dataset.parking;
+            document.querySelectorAll('.parking-stats').forEach(stats => {
+                stats.style.display = stats.dataset.parking === parkingName ? 'block' : 'none';
+            });
+            
+            // Показываем сотрудников выбранной парковки
+            document.querySelectorAll('.parking-employees').forEach(emp => {
+                emp.style.display = emp.dataset.parking === parkingName ? 'block' : 'none';
+            });
+        });
+    });
+
+    // Загружаем данные первой парковки при загрузке страницы
+    const firstParking = document.querySelector('.parking-item');
+    if (firstParking) {
+        firstParking.click();
+    }
+});
+
+// Функция для получения CSRF-токена
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Функции для работы с модальным окном
+function openAddEmployeeModal() {
+    document.getElementById('addEmployeeModal').style.display = 'block';
+}
+
+function closeAddEmployeeModal() {
+    document.getElementById('addEmployeeModal').style.display = 'none';
+}
+
+function searchGuards(query) {
+    const guards = document.querySelectorAll('.guard-item');
+    guards.forEach(guard => {
+        const name = guard.querySelector('.guard-name').textContent.toLowerCase();
+        guard.style.display = name.includes(query.toLowerCase()) ? 'flex' : 'none';
+    });
+}
+
+function addGuard(userId, parkingName) {
+    fetch('/add_parking_access/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `user_id=${userId}&parking_name=${encodeURIComponent(parkingName)}`
+    })
+    .then(response => response.text())
+    .then(text => {
+        try {
+            const data = JSON.parse(text);
+            if (data.success) {
+                alert('Сотрудник успешно добавлен к парковке!');
+                location.reload();
+            } else {
+                alert('Ошибка: ' + data.error);
+            }
+        } catch (e) {
+            alert('Ошибка запроса: ' + text);
+        }
+    })
+    .catch(error => {
+        alert('Ошибка запроса: ' + error);
+    });
+}
+function removeEmployee(userId) {
+    const activeParking = document.querySelector('.parking-item.active');
+    const parkingName = activeParking ? activeParking.dataset.parking : '';
+    if (!parkingName) {
+        alert('Не удалось определить парковку!');
+        return;
+    }
+    if (confirm('Вы уверены, что хотите удалить этого сотрудника с парковки?')) {
+        fetch('/remove_parking_access/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `user_id=${userId}&parking_name=${encodeURIComponent(parkingName)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Сотрудник удалён с парковки!');
+                location.reload();
+            } else {
+                alert('Ошибка: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Ошибка запроса: ' + error);
+        });
+    }
+}
+function addGuard(userId, parkingName) {
+       fetch('/add_parking_access/', {
+           method: 'POST',
+           headers: {
+               'Content-Type': 'application/x-www-form-urlencoded',
+               'X-CSRFToken': getCookie('csrftoken')
+           },
+           body: `user_id=${userId}&parking_name=${encodeURIComponent(parkingName)}`
+       })
+       .then(response => response.text())
+       .then(text => {
+           try {
+               const data = JSON.parse(text);
+               if (data.success) {
+                   alert('Сотрудник успешно добавлен к парковке!');
+                   location.reload();
+               } else {
+                   alert('Ошибка: ' + data.error);
+               }
+           } catch (e) {
+               alert('Ошибка запроса: ' + text);
+           }
+       })
+       .catch(error => {
+           alert('Ошибка запроса: ' + error);
+       });
+   }
+</script>
+{% endblock %}
+

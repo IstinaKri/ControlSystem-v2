@@ -1,0 +1,32 @@
+{% extends 'main/admin_base.html' %}
+{% load static %}
+
+{% block title %}Шлагбаумы{% endblock %}
+
+{% block page_title %}Шлагбаумы{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        padding: 20px;
+        background: #f3f4f6;
+        min-height: calc(100vh - 60px);
+    }
+    .requests-section {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+   
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="requests-section">
+    
+</div>
+</div>
+{% endblock %}
+
